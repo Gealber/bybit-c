@@ -12,3 +12,4 @@ Implementation in C of [Bybit API](https://bybit-exchange.github.io/docs/). This
 1. [Get Bybit Server Time](https://bybit-exchange.github.io/docs/v5/market/time)
 2. [Get Tickers](https://bybit-exchange.github.io/docs/v5/market/tickers)
 3. [Get Kline](https://bybit-exchange.github.io/docs/v5/market/kline)
+4. [Get Mark Price Kline](https://bybit-exchange.github.io/docs/v5/market/mark-kline)

@@ -54,6 +54,8 @@ typedef struct
 Ticker *build_ticker(const cJSON *list_item);
 void free_ticker(Ticker *ticker);
 Kline *build_kline(const cJSON *list_item);
+Kline *build_price_kline(const cJSON *list_item);
 void free_kline(Kline *kline);
+void free_price_kline(Kline *kline);
 
 #endif

@@ -7,6 +7,7 @@ const char *ANNOUNCEMENT_PATH = "/announcements/index";
 const char *TICKERS_PATH = "/market/tickers";
 const char *SERVER_TIME_PATH = "/market/time";
 const char *KLINE_PATH = "/market/kline";
+const char *MARK_PRICE_KLINE_PATH = "/market/mark-price-kline";
 
 const char *USER_AGENT = "bybit-c";
 

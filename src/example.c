@@ -8,17 +8,67 @@
 void retrieve_ticker();
 void retrieve_time_server();
 void retrieve_kline();
+void retrieve_price_kline();
 void print_ticker(Ticker *ticker);
 void print_kline(Kline *kline);
+void print_price_kline(Kline *kline);
 
 int main(int argc, char *argv[])
 {
   // retrieve_ticker();
   // retrieve_time_server();
-  retrieve_kline();
+  // retrieve_kline();
+  retrieve_price_kline();
   return 0;
 }
 
+// retrieve price kline example
+void retrieve_price_kline()
+{
+  KlineQueryParams *query = malloc(sizeof(KlineQueryParams));
+
+  query->category = "linear";
+  query->symbol = "BTCUSDT";
+  query->interval = "60"; // klines for 1 hour interval
+  query->start = "";
+  query->end = "";
+  query->limit = "100";
+
+  KlineResponse *resp = get_mark_price_kline(query);
+  if (!resp)
+    goto end;
+
+  struct Node *cur = resp->list;
+  if (cur == NULL)
+    printf("CUR IS NULL\n");
+
+  int i = 0;
+  while (cur != NULL)
+  {
+    Kline *kline = (Kline *)cur->val;
+    printf("-------------------> %d\n", i);
+    print_price_kline(kline);
+    cur = cur->next;
+    i++;
+  }
+
+  // free response
+  free(resp->category);
+  free(resp->symbol);
+  Node *tmp = NULL;
+  cur = resp->list;
+  while (cur != NULL)
+  {
+    free_price_kline(cur->val);
+    tmp = cur;
+    cur = cur->next;
+    free(tmp);
+  }
+  free(resp);
+
+end:
+  free(query);
+}
 // retrieve kline example
 void retrieve_kline()
 {
@@ -160,4 +210,13 @@ void print_kline(Kline *kline)
   printf("close price: %s\n", kline->close_price);
   printf("volume: %s\n", kline->volume);
   printf("turnover: %s\n", kline->turnover);
+}
+
+void print_price_kline(Kline *kline)
+{
+  printf("start time: %s\n", kline->start_time);
+  printf("open price: %s\n", kline->open_price);
+  printf("high price: %s\n", kline->high_price);
+  printf("low price: %s\n", kline->low_price);
+  printf("close price: %s\n", kline->close_price);
 }
