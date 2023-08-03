@@ -29,7 +29,31 @@ typedef struct
     char *usd_index_price;
 } Ticker;
 
+typedef struct
+{
+    char *category;
+    char *symbol;
+    char *interval;
+    char *start;
+    char *end;
+    char *limit;
+} KlineQueryParams;
+
+// the elements of this array will be the one specified int KlineFields
+typedef struct
+{
+    char *start_time;
+    char *open_price;
+    char *high_price;
+    char *low_price;
+    char *close_price;
+    char *volume;
+    char *turnover;
+} Kline;
+
 Ticker *build_ticker(const cJSON *list_item);
 void free_ticker(Ticker *ticker);
+Kline *build_kline(const cJSON *list_item);
+void free_kline(Kline *kline);
 
 #endif

@@ -6,6 +6,7 @@ const char *DOMAIN_MAINNET = "https://api.bybit.com/v5";
 const char *ANNOUNCEMENT_PATH = "/announcements/index";
 const char *TICKERS_PATH = "/market/tickers";
 const char *SERVER_TIME_PATH = "/market/time";
+const char *KLINE_PATH = "/market/kline";
 
 const char *USER_AGENT = "bybit-c";
 

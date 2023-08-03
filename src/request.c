@@ -11,6 +11,8 @@ This file contains the building of requests and free of structs used in requests
 Ticker *build_ticker(const cJSON *list_item)
 {
     Ticker *ticker = malloc(sizeof(Ticker));
+    if (!ticker)
+        return NULL;
 
     // symbol
     char *symbol_str = extract_string_field(list_item, "symbol");
@@ -74,4 +76,57 @@ void free_ticker(Ticker *ticker)
     ticker = NULL;
 }
 
-// void free_ts
+// build kline from response
+Kline *build_kline(const cJSON *list_item)
+{
+    Kline *kline = malloc(sizeof(Kline));
+    if (!kline)
+        return NULL;
+
+    int size = cJSON_GetArraySize(list_item);
+    if (size != 7)
+        return NULL;
+
+    cJSON *start_time = cJSON_GetArrayItem(list_item, 0);
+    if(cJSON_IsString(start_time) && (start_time->valuestring != NULL))
+        kline->start_time = strdup(start_time->valuestring);
+
+    cJSON *open_price = cJSON_GetArrayItem(list_item, 1);
+    if(cJSON_IsString(open_price) && (open_price->valuestring != NULL))
+        kline->open_price = strdup(open_price->valuestring);
+
+    cJSON *high_price = cJSON_GetArrayItem(list_item, 2);
+    if(cJSON_IsString(high_price) && (high_price->valuestring != NULL))
+        kline->high_price = strdup(high_price->valuestring);
+
+    cJSON *low_price = cJSON_GetArrayItem(list_item, 3);
+    if(cJSON_IsString(low_price) && (low_price->valuestring != NULL))
+        kline->low_price = strdup(low_price->valuestring);
+
+    cJSON *close_price = cJSON_GetArrayItem(list_item, 4);
+    if(cJSON_IsString(close_price) && (close_price->valuestring != NULL))
+        kline->close_price = strdup(close_price->valuestring);
+
+    cJSON *volume = cJSON_GetArrayItem(list_item, 5);
+    if(cJSON_IsString(volume) && (volume->valuestring != NULL))
+        kline->volume = strdup(volume->valuestring);
+
+    cJSON *turn_over = cJSON_GetArrayItem(list_item, 6);
+    if(cJSON_IsString(turn_over) && (turn_over->valuestring != NULL))
+        kline->turnover = strdup(turn_over->valuestring);
+
+    return kline;
+}
+
+void free_kline(Kline *kline)
+{
+    free(kline->start_time); 
+    free(kline->open_price); 
+    free(kline->high_price); 
+    free(kline->low_price);
+    free(kline->close_price);
+    free(kline->volume); 
+    free(kline->turnover); 
+    free(kline);
+    kline = NULL;
+}

@@ -50,8 +50,9 @@ typedef struct
 } AnnouncementType;
 
 Client *new(char *api_key, char *api_secret);
+CURL *http_client();
 TickerResponse *get_ticker(TickersQueryParams *query);
 TimeServerResponse *get_time_server();
-CURL *http_client();
+KlineResponse *get_kline(KlineQueryParams *query);
 
 #endif

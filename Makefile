@@ -23,6 +23,9 @@ $(TARGET): $(OBJECTS)
 
 build-run: clean default run clean-objs
 
+valgrind-run:
+	valgrind --leak-check=yes ./bin/example
+
 run:
 	./bin/example
 
