@@ -9,16 +9,20 @@ void retrieve_ticker();
 void retrieve_time_server();
 void retrieve_kline();
 void retrieve_price_kline();
+void retrieve_order_book();
 void print_ticker(Ticker *ticker);
 void print_kline(Kline *kline);
 void print_price_kline(Kline *kline);
+void print_order_book(OrderB *order);
 
 int main(int argc, char *argv[])
 {
+  /*Uncomment these lines to run examples*/
   // retrieve_ticker();
   // retrieve_time_server();
   // retrieve_kline();
-  retrieve_price_kline();
+  // retrieve_price_kline();
+  retrieve_order_book();
   return 0;
 }
 
@@ -40,7 +44,7 @@ void retrieve_price_kline()
 
   struct Node *cur = resp->list;
   if (cur == NULL)
-    printf("CUR IS NULL\n");
+      goto end;
 
   int i = 0;
   while (cur != NULL)
@@ -69,6 +73,7 @@ void retrieve_price_kline()
 end:
   free(query);
 }
+
 // retrieve kline example
 void retrieve_kline()
 {
@@ -87,7 +92,7 @@ void retrieve_kline()
 
   struct Node *cur = resp->list;
   if (cur == NULL)
-    printf("CUR IS NULL\n");
+    goto end;
 
   int i = 0;
   while (cur != NULL)
@@ -115,6 +120,74 @@ void retrieve_kline()
 
 end:
   free(query);
+}
+
+// retrieve order book example
+void retrieve_order_book()
+{
+  OrderBookQuery *query = malloc(sizeof(OrderBookQuery));
+
+  query->category = "spot";
+  query->symbol = "TONUSDT";
+  query->limit = "50";
+
+  OrderBookResponse *resp = get_order_book(query);
+  if (!resp)
+    goto end;
+
+  struct Node *cur = resp->asks;
+  if (cur == NULL)
+      goto end;
+
+  printf("ASKS: \n");
+  int i = 0;
+  while (cur != NULL)
+  {
+    OrderB *order = (OrderB *)cur->val;
+    printf("-------------------> %d\n", i);
+    print_order_book(order);
+    cur = cur->next;
+    i++;
+  }
+
+  printf("BIDS: \n");
+  i = 0;
+  cur = resp->bids;
+  while (cur != NULL)
+  {
+    OrderB *order = (OrderB *)cur->val;
+    printf("-------------------> %d\n", i);
+    print_order_book(order);
+    cur = cur->next;
+    i++;
+  }
+
+  // free response
+  free(resp->symbol);
+  Node *tmp = NULL;
+  cur = resp->asks;
+  while (cur != NULL)
+  {
+    free_order(cur->val);
+    tmp = cur;
+    cur = cur->next;
+    free(tmp);
+  }
+
+  cur = resp->bids;
+  while (cur != NULL)
+  {
+    free_order(cur->val);
+    tmp = cur;
+    cur = cur->next;
+    free(tmp);
+  }
+
+end:
+  if (resp)
+    free(resp);
+  if (query)
+    free(query);
 }
 // retrieve time server example
 void retrieve_time_server()
@@ -219,4 +292,10 @@ void print_price_kline(Kline *kline)
   printf("high price: %s\n", kline->high_price);
   printf("low price: %s\n", kline->low_price);
   printf("close price: %s\n", kline->close_price);
+}
+
+void print_order_book(OrderB *order)
+{
+  printf("price: %s\n", order->price);
+  printf("size: %s\n", order->size);
 }

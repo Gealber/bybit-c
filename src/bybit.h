@@ -55,5 +55,6 @@ TickerResponse *get_ticker(TickersQueryParams *query);
 TimeServerResponse *get_time_server();
 KlineResponse *get_kline(KlineQueryParams *query);
 KlineResponse *get_mark_price_kline(KlineQueryParams *query);
+OrderBookResponse *get_order_book(OrderBookQuery *query);
 
 #endif

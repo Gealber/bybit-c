@@ -51,11 +51,28 @@ typedef struct
     char *turnover;
 } Kline;
 
+// OrderBookQuery represents a query for order book
+typedef struct
+{
+    char *category;
+    char *symbol;
+    char *limit;
+} OrderBookQuery;
+
+// OrderB represents an order in the order book.
+typedef struct
+{
+    char *price; // price of the order
+    char *size;  // size of the order
+} OrderB;
+
 Ticker *build_ticker(const cJSON *list_item);
 void free_ticker(Ticker *ticker);
 Kline *build_kline(const cJSON *list_item);
 Kline *build_price_kline(const cJSON *list_item);
+OrderB *build_orderb(const cJSON *list_item);
 void free_kline(Kline *kline);
 void free_price_kline(Kline *kline);
+void free_order(OrderB *order);
 
 #endif

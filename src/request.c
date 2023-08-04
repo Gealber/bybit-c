@@ -152,6 +152,28 @@ Kline *build_price_kline(const cJSON *list_item)
     return kline;
 }
 
+// build order from response
+OrderB *build_orderb(const cJSON *list_item)
+{
+    OrderB *order = malloc(sizeof(OrderB));
+    if (!order)
+        return NULL;
+
+    int size = cJSON_GetArraySize(list_item);
+    if (size != 2)
+        return NULL;
+
+    cJSON *price = cJSON_GetArrayItem(list_item, 0);
+    if(cJSON_IsString(price) && (price->valuestring != NULL))
+        order->price = strdup(price->valuestring);
+
+    cJSON *order_size = cJSON_GetArrayItem(list_item, 1);
+    if(cJSON_IsString(order_size) && (order_size->valuestring != NULL))
+        order->size = strdup(order_size->valuestring);
+
+    return order;
+}
+
 void free_kline(Kline *kline)
 {
     free(kline->start_time); 
@@ -174,4 +196,12 @@ void free_price_kline(Kline *kline)
     free(kline->close_price);
     free(kline);
     kline = NULL;
+}
+
+void free_order(OrderB *order)
+{
+    free(order->price); 
+    free(order->size); 
+    free(order);
+    order = NULL;
 }

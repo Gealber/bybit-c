@@ -86,7 +86,7 @@ TimeServerResponse *parse_ts_response(char *text)
         char *time_nano = extract_string_field(result, "timeNano");
         if (strlen(time_nano) != 0)
             resp->time_nano = strdup(time_nano);
-       
+
     }
 
     cJSON_Delete(json);
@@ -186,6 +186,72 @@ KlineResponse *parse_price_kline_response(char *text)
             new_node->val = kline;
             new_node->next = resp->list;
             resp->list = new_node;
+        }
+    }
+
+    cJSON_Delete(json);
+
+    return resp;
+}
+
+OrderBookResponse *parse_order_book_response(char *text)
+{
+    OrderBookResponse *resp =  malloc(sizeof(OrderBookResponse));
+    if (!resp)
+        return NULL;
+    resp->bids = NULL;
+    resp->asks = NULL;
+
+    const cJSON *result = NULL;
+    const cJSON *a = NULL;
+    const cJSON *a_item = NULL;
+    const cJSON *b = NULL;
+    const cJSON *b_item = NULL;
+
+    if (strlen(text) == 0)
+        return NULL;
+    cJSON *json = cJSON_Parse(text);
+    if(!json) {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        if (error_ptr != NULL)
+        {
+            fprintf(stderr, "Error before: %s\n", error_ptr);
+            fprintf(stderr, "Error text: %s\n", text);
+        }
+    }
+
+    // cursor of the list
+    result = cJSON_GetObjectItemCaseSensitive(json, "result");
+    if(cJSON_IsObject(result))
+    {
+        char *symbol_str = extract_string_field(result, "s");
+        if (strlen(symbol_str) != 0)
+            resp->symbol = strdup(symbol_str);
+        char *ts_str = extract_string_field(result, "ts");
+        if (strlen(ts_str) != 0)
+            resp->ts = strdup(ts_str);
+        char *u_str = extract_string_field(result, "u");
+        if (strlen(u_str) != 0)
+            resp->update_id = strdup(u_str);
+
+        a = cJSON_GetObjectItemCaseSensitive(result, "a");
+        cJSON_ArrayForEach(a_item, a)
+        {
+            OrderB *order = build_orderb(a_item);
+            Node *new_node = malloc(sizeof(Node));
+            new_node->val = order;
+            new_node->next = resp->asks;
+            resp->asks = new_node;
+        }
+
+        b = cJSON_GetObjectItemCaseSensitive(result, "b");
+        cJSON_ArrayForEach(b_item, b)
+        {
+            OrderB *order = build_orderb(b_item);
+            Node *new_node = malloc(sizeof(Node));
+            new_node->val = order;
+            new_node->next = resp->bids;
+            resp->bids = new_node;
         }
     }
 
