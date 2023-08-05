@@ -45,10 +45,7 @@ TickerResponse *parse_ticker_response(char *text)
         cJSON_ArrayForEach(list_item, list)
         {
             Ticker *ticker = build_ticker(list_item);
-            Node *new_node = malloc(sizeof(Node));
-            new_node->val = ticker;
-            new_node->next = resp->list;
-            resp->list = new_node;
+            add_list_item(&resp->list, ticker);
         }
     }
 
@@ -132,10 +129,7 @@ KlineResponse *parse_kline_response(char *text)
         cJSON_ArrayForEach(list_item, list)
         {
             Kline *kline = build_kline(list_item);
-            Node *new_node = malloc(sizeof(Node));
-            new_node->val = kline;
-            new_node->next = resp->list;
-            resp->list = new_node;
+            add_list_item(&resp->list, kline);
         }
     }
 
@@ -182,10 +176,7 @@ KlineResponse *parse_price_kline_response(char *text)
         cJSON_ArrayForEach(list_item, list)
         {
             Kline *kline = build_price_kline(list_item);
-            Node *new_node = malloc(sizeof(Node));
-            new_node->val = kline;
-            new_node->next = resp->list;
-            resp->list = new_node;
+            add_list_item(&resp->list, kline);
         }
     }
 
@@ -238,20 +229,14 @@ OrderBookResponse *parse_order_book_response(char *text)
         cJSON_ArrayForEach(a_item, a)
         {
             OrderB *order = build_orderb(a_item);
-            Node *new_node = malloc(sizeof(Node));
-            new_node->val = order;
-            new_node->next = resp->asks;
-            resp->asks = new_node;
+            add_list_item(&resp->asks, order);
         }
 
         b = cJSON_GetObjectItemCaseSensitive(result, "b");
         cJSON_ArrayForEach(b_item, b)
         {
             OrderB *order = build_orderb(b_item);
-            Node *new_node = malloc(sizeof(Node));
-            new_node->val = order;
-            new_node->next = resp->bids;
-            resp->bids = new_node;
+            add_list_item(&resp->bids, order);
         }
     }
 

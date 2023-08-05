@@ -57,6 +57,139 @@ Ticker *build_ticker(const cJSON *list_item)
     return ticker;
 }
 
+TickersQueryParams *build_ticker_query(char *category, char *symbol, char *base_coin, char *exp_date)
+{
+    TickersQueryParams *params = malloc(sizeof(TickersQueryParams));
+    if (!params)
+        return NULL;
+    
+    params->category = category;
+    params->symbol = symbol;
+    params->base_coin = base_coin;
+    params->exp_date = exp_date;
+
+    params->_queries = (Node *)calloc(1, sizeof(Node));
+
+    // build _queries list
+
+    if (category != NULL && strlen(category) != 0) {
+        _queryElement *category_query = create_query_element("category", category);
+        add_list_item(&params->_queries, category_query);
+    }
+    if (symbol != NULL && strlen(symbol) != 0) {
+        _queryElement *symbol_query = create_query_element("symbol", symbol);
+        add_list_item(&params->_queries, symbol_query);
+    }
+    if (base_coin != NULL && strlen(base_coin) != 0) {
+        _queryElement *base_coin_query = create_query_element("baseCoin", base_coin);
+        add_list_item(&params->_queries, base_coin_query);
+    }
+    if (exp_date != NULL && strlen(exp_date) != 0) {
+        _queryElement *exp_date_query = create_query_element("expDate", exp_date);
+        add_list_item(&params->_queries, exp_date_query);
+    }
+
+    return params;
+}
+
+KlineQueryParams *build_kline_query(char *category, char *symbol, char *interval, char *start, char *end, char *limit)
+{
+    KlineQueryParams *params = malloc(sizeof(KlineQueryParams));
+    if (!params)
+        return NULL;
+    
+    params->category = category;
+    params->symbol = symbol;
+    params->interval = interval;
+    params->start = start;
+    params->end = end;
+    params->limit = limit;
+
+    params->_queries = (Node *)calloc(1, sizeof(Node));
+
+    // build _queries list
+    if (category != NULL && strlen(category) != 0) {
+        _queryElement *category_query = create_query_element("category", category);
+        add_list_item(&params->_queries, category_query);
+    }
+    if (symbol != NULL && strlen(symbol) != 0) {
+        _queryElement *symbol_query = create_query_element("symbol", symbol);
+        add_list_item(&params->_queries, symbol_query);
+    }
+    if (interval && strlen(interval) != 0) {
+        _queryElement *interval_query = create_query_element("interval", interval);
+        add_list_item(&params->_queries, interval_query);
+    }
+    if (start && strlen(start) != 0) {
+        _queryElement *start_query = create_query_element("start", start);
+        add_list_item(&params->_queries, start_query);
+    }
+    if (end && strlen(end) != 0) {
+        _queryElement *end_query = create_query_element("end", end);
+        add_list_item(&params->_queries, end_query);
+    }
+    if (limit != NULL && strlen(limit) != 0) {
+        _queryElement *limit_query = create_query_element("limit", limit);
+        add_list_item(&params->_queries, limit_query);
+    }
+
+    return params;
+}
+
+OrderBookQuery *build_order_book_query(char *category, char *symbol, char *limit)
+{
+    OrderBookQuery *params = malloc(sizeof(OrderBookQuery));
+    if (!params)
+        return NULL;
+    
+    params->category = category;
+    params->symbol = symbol;
+    params->limit = limit;
+
+    params->_queries = (Node *)calloc(1, sizeof(Node));
+
+    // build _queries list
+    if (category != NULL && strlen(category) != 0) {
+        _queryElement *category_query = create_query_element("category", category);
+        add_list_item(&params->_queries, category_query);
+    }
+    if (symbol != NULL && strlen(symbol) != 0) {
+        _queryElement *symbol_query = create_query_element("symbol", symbol);
+        add_list_item(&params->_queries, symbol_query);
+    }
+    if (limit != NULL && strlen(limit) != 0) {
+        _queryElement *limit_query = create_query_element("limit", limit);
+        add_list_item(&params->_queries, limit_query);
+    }
+
+    return params;
+}
+
+_queryElement *create_query_element(char *key, char *val)
+{
+    _queryElement *elem = malloc(sizeof(_queryElement));
+    elem->key = strdup(key);
+    elem->val = strdup(val);
+    
+    return elem;
+}
+
+void free_query_element(_queryElement *elem)
+{
+    if (elem) {
+        free(elem->key);
+        free(elem->val);
+        free(elem);
+    }
+
+    elem = NULL;
+}
+
+void free_query_element_callback(void *elem)
+{
+    free_query_element((_queryElement *)elem);
+}
+
 void free_ticker(Ticker *ticker)
 {
     free(ticker->symbol); 

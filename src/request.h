@@ -5,11 +5,19 @@
 
 typedef struct
 {
+    char *key;
+    char *val;
+} _queryElement;
+
+
+typedef struct
+{
     // category is required
     char *category;
     char *symbol;
     char *base_coin;
     char *exp_date;
+    struct Node *_queries;
 } TickersQueryParams;
 
 typedef struct
@@ -37,6 +45,7 @@ typedef struct
     char *start;
     char *end;
     char *limit;
+    struct Node *_queries;
 } KlineQueryParams;
 
 // the elements of this array will be the one specified int KlineFields
@@ -57,6 +66,7 @@ typedef struct
     char *category;
     char *symbol;
     char *limit;
+    struct Node *_queries;
 } OrderBookQuery;
 
 // OrderB represents an order in the order book.
@@ -71,8 +81,16 @@ void free_ticker(Ticker *ticker);
 Kline *build_kline(const cJSON *list_item);
 Kline *build_price_kline(const cJSON *list_item);
 OrderB *build_orderb(const cJSON *list_item);
+TickersQueryParams *build_ticker_query(char *category, char *symbol, char *base_coin, char *exp_date);
+KlineQueryParams *build_kline_query(char *category, char *symbol, char *interval, char *start, char *end, char *limit);
+OrderBookQuery *build_order_book_query(char *category, char *symbol, char *limit);
+_queryElement *create_query_element(char *key, char *val);
+
+// methods for releasing memory
 void free_kline(Kline *kline);
 void free_price_kline(Kline *kline);
 void free_order(OrderB *order);
+void free_query_element(_queryElement *elem);
+void free_query_element_callback(void *elem);
 
 #endif

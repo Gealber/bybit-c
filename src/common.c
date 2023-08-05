@@ -5,6 +5,29 @@
 #include "common.h"
 
 
+void add_list_item(Node **list, void *val)
+{
+    Node *new_node = malloc(sizeof(Node));
+    new_node->val = val;
+    new_node->next = (*list);
+    (*list) = new_node;
+}
+
+void free_list(Node **list, void free_val_callback(void *))
+{
+    Node *cur = *list;
+    Node *next ;
+    while (cur != NULL)
+    {
+        next = cur->next;
+        free_val_callback(cur->val);
+        free(cur);
+        cur = next;
+    }
+
+    *list = NULL;
+}
+
 // add query will set the query only if the key or value provided are not empty
 void add_query(CURL *hnd_url, char *key, char *val)
 {

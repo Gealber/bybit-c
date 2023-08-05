@@ -60,10 +60,14 @@ TickerResponse *get_ticker(TickersQueryParams *query)
     curl_url_set(hnd_url, CURLUPART_URL, url, 0);
 
     // build queries
-    add_query(hnd_url, "category", query->category);
-    add_query(hnd_url, "baseCoin", query->base_coin);
-    add_query(hnd_url, "symbol", query->symbol);
-    add_query(hnd_url, "expDate", query->exp_date);
+    struct Node *cur = query->_queries;
+    while (cur != NULL) {
+        _queryElement *query = (_queryElement *)cur->val;
+        if (!query)
+            break;
+        add_query(hnd_url, query->key, query->val);
+        cur = cur->next;
+    }
 
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
@@ -81,6 +85,7 @@ TickerResponse *get_ticker(TickersQueryParams *query)
 
     TickerResponse *resp = parse_ticker_response(mem.chunk);
 
+    // cleaning queries
     curl_easy_cleanup(hnd);
     hnd = NULL;
     curl_url_cleanup(hnd_url);
@@ -132,12 +137,14 @@ KlineResponse *get_kline(KlineQueryParams *query)
     curl_url_set(hnd_url, CURLUPART_URL, url, 0);
 
     // build queries
-    add_query(hnd_url, "category", query->category);
-    add_query(hnd_url, "symbol", query->symbol);
-    add_query(hnd_url, "interval", query->interval);
-    add_query(hnd_url, "start", query->start);
-    add_query(hnd_url, "end", query->end);
-    add_query(hnd_url, "limit", query->limit);
+    struct Node *cur = query->_queries;
+    while (cur != NULL) {
+        _queryElement *query = (_queryElement *)cur->val;
+        if (!query)
+            break;
+        add_query(hnd_url, query->key, query->val);
+        cur = cur->next;
+    }
 
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
@@ -172,12 +179,14 @@ KlineResponse *get_mark_price_kline(KlineQueryParams *query)
     curl_url_set(hnd_url, CURLUPART_URL, url, 0);
 
     // build queries
-    add_query(hnd_url, "category", query->category);
-    add_query(hnd_url, "symbol", query->symbol);
-    add_query(hnd_url, "interval", query->interval);
-    add_query(hnd_url, "start", query->start);
-    add_query(hnd_url, "end", query->end);
-    add_query(hnd_url, "limit", query->limit);
+    struct Node *cur = query->_queries;
+    while (cur != NULL) {
+        _queryElement *query = (_queryElement *)cur->val;
+        if (!query)
+            break;
+        add_query(hnd_url, query->key, query->val);
+        cur = cur->next;
+    }
 
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
@@ -212,9 +221,14 @@ OrderBookResponse *get_order_book(OrderBookQuery *query)
     curl_url_set(hnd_url, CURLUPART_URL, url, 0);
 
     // build queries
-    add_query(hnd_url, "category", query->category);
-    add_query(hnd_url, "symbol", query->symbol);
-    add_query(hnd_url, "limit", query->limit);
+    struct Node *cur = query->_queries;
+    while (cur != NULL) {
+        _queryElement *query = (_queryElement *)cur->val;
+        if (!query)
+            break;
+        add_query(hnd_url, query->key, query->val);
+        cur = cur->next;
+    }
 
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
