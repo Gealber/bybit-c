@@ -43,6 +43,8 @@ CURL *http_client()
     return hnd;
 }
 
+// perfomr_get perform a GET http request storing its response
+// in mem
 CURLcode perform_get(char *url, Node *queries, ResponseJSON *mem)
 {
     CURL *hnd_url = curl_url();
