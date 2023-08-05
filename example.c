@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "bybit.h"
-#include "common.h"
-#include "request.h"
-#include "response.h"
+#include "src/bybit.h"
+#include "src/common.h"
+#include "src/request.h"
+#include "src/response.h"
 
 void retrieve_ticker();
 void retrieve_time_server();
@@ -18,12 +18,74 @@ void print_order_book(OrderB *order);
 int main(int argc, char *argv[])
 {
 	/*Uncomment these lines to run examples*/
+	retrieve_time_server();
 	// retrieve_ticker();
-	// retrieve_time_server();
 	// retrieve_kline();
 	// retrieve_price_kline();
-	retrieve_order_book();
+	// retrieve_order_book();
 	return 0;
+}
+
+// retrieve ticker example
+void retrieve_ticker()
+{
+	TickersQueryParams *query = build_ticker_query("spot", "TONUSDT", "TON", "");
+	if (!query) {
+		printf("QUERY IS NULL\n");
+		return;
+	}
+
+	APIResponse *api_resp = get_ticker(query);
+	if (!api_resp) {
+		printf("RESP IS NULL\n");
+		goto end;
+	}
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+	if (!api_resp->result) {
+		printf("RESULT IS NULL\n");
+		goto end;
+	}
+
+	TickerResponse *resp = (TickerResponse *)api_resp->result;
+	struct Node *cur = resp->list;
+	if (cur == NULL) {
+		printf("CUR IS NULL\n");
+		goto end;
+	}
+
+	while (cur != NULL)
+	{
+		Ticker *ticker = (Ticker *)cur->val;
+		print_ticker(ticker);
+		cur = cur->next;
+	}
+
+	// free response
+	Node *tmp = NULL;
+	cur = resp->list;
+	while (cur != NULL)
+	{
+		free_ticker(cur->val);
+		tmp = cur;
+		cur = cur->next;
+		free(tmp);
+	}
+
+	if (resp->category) free(resp->category);
+
+end:
+	free_api_response(api_resp);
+	if (query)
+	{
+		free_list(&query->_queries, free_query_element_callback);
+		free(query);
+	}
 }
 
 // retrieve price kline example
@@ -33,9 +95,22 @@ void retrieve_price_kline()
 	if (!query)
 		return;
 
-	KlineResponse *resp = get_mark_price_kline(query);
-	if (!resp)
+	APIResponse *api_resp = get_mark_price_kline(query);
+	if (!api_resp)
 		goto end;
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+	if (!api_resp->result) {
+		printf("RESULT IS NULL\n");
+		goto end;
+	}
+
+	KlineResponse *resp = (KlineResponse *)api_resp->result;
 
 	struct Node *cur = resp->list;
 	if (cur == NULL)
@@ -52,8 +127,6 @@ void retrieve_price_kline()
 	}
 
 	// free response
-	free(resp->category);
-	free(resp->symbol);
 	Node *tmp = NULL;
 	cur = resp->list;
 	while (cur != NULL)
@@ -64,9 +137,10 @@ void retrieve_price_kline()
 		free(tmp);
 	}
 
+	if (resp->category) free(resp->category);
+	if (resp->symbol) free(resp->symbol);
 end:
-	if (resp)
-		free(resp);
+	free_api_response(api_resp);
 	if (query)
 	{
 		free_list(&query->_queries, free_query_element_callback);
@@ -81,9 +155,17 @@ void retrieve_kline()
 	if (!query)
 		return;
 
-	KlineResponse *resp = get_kline(query);
-	if (!resp)
+	APIResponse *api_resp = get_kline(query);
+	if (!api_resp)
 		goto end;
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+	KlineResponse *resp = (KlineResponse *)api_resp->result;
 
 	struct Node *cur = resp->list;
 	if (cur == NULL)
@@ -99,9 +181,6 @@ void retrieve_kline()
 		i++;
 	}
 
-	// free response
-	free(resp->category);
-	free(resp->symbol);
 	Node *tmp = NULL;
 	cur = resp->list;
 	while (cur != NULL)
@@ -112,9 +191,12 @@ void retrieve_kline()
 		free(tmp);
 	}
 
+	// free response
+	if (resp->category) free(resp->category);
+	if (resp->symbol) free(resp->symbol);
+	
 end:
-	if (resp)
-		free(resp);
+	free_api_response(api_resp);
 	if (query)
 	{
 		free_list(&query->_queries, free_query_element_callback);
@@ -129,9 +211,24 @@ void retrieve_order_book()
 	if (!query)
 		return;
 
-	OrderBookResponse *resp = get_order_book(query);
-	if (!resp)
+	APIResponse *api_resp = get_order_book(query);
+	if (!api_resp) {
+		printf("RESP IS NULL\n");
 		goto end;
+	}
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+	if (!api_resp->result) {
+		printf("RESULT IS NULL\n");
+		goto end;
+	}
+
+	OrderBookResponse *resp = (OrderBookResponse *)api_resp->result;
 
 	struct Node *cur = resp->asks;
 	if (cur == NULL)
@@ -161,7 +258,6 @@ void retrieve_order_book()
 	}
 
 	// free response
-	free(resp->symbol);
 	Node *tmp = NULL;
 	cur = resp->asks;
 	while (cur != NULL)
@@ -181,71 +277,45 @@ void retrieve_order_book()
 		free(tmp);
 	}
 
+	if (resp->symbol) free(resp->symbol);
+	if (resp->ts) free(resp->ts);
+	if (resp->update_id) free(resp->update_id);
+
 end:
-	if (resp)
-		free(resp);
+	free_api_response(api_resp);
 	if (query)
 	{
 		free_list(&query->_queries, free_query_element_callback);
 		free(query);
 	}
 }
+
 // retrieve time server example
 void retrieve_time_server()
 {
-	TimeServerResponse *resp = get_time_server();
-	if (!resp)
+	APIResponse *api_resp = get_time_server();
+	if (!api_resp)
 		return;
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+
+	TimeServerResponse *resp = (TimeServerResponse *)api_resp->result;
+	if (!resp)
+		goto end;
+	
 
 	printf("time_second: %s\n", resp->time_second);
 	printf("time_nano: %s\n", resp->time_nano);
-	free(resp->time_second);
-	free(resp->time_nano);
-	free(resp);
-}
 
-// retrieve ticker example
-void retrieve_ticker()
-{
-	TickersQueryParams *query = build_ticker_query("spot", "TONUSDT", "TON", "lala");
-	if (!query)
-		return;
-
-	TickerResponse *resp = get_ticker(query);
-	if (!resp)
-		goto end;
-
-	struct Node *cur = resp->list;
-	if (cur == NULL)
-		goto end;
-
-	while (cur != NULL)
-	{
-		Ticker *ticker = (Ticker *)cur->val;
-		print_ticker(ticker);
-		cur = cur->next;
-	}
-
-	// free response
-	free(resp->category);
-	Node *tmp = NULL;
-	cur = resp->list;
-	while (cur != NULL)
-	{
-		free_ticker(cur->val);
-		tmp = cur;
-		cur = cur->next;
-		free(tmp);
-	}
-
+	if (resp->time_second) free(resp->time_second);
+	if (resp->time_nano) free(resp->time_nano);
 end:
-	if (resp)
-		free(resp);
-	if (query)
-	{
-		free_list(&query->_queries, free_query_element_callback);
-		free(query);
-	}
+	free_api_response(api_resp);
 }
 
 void print_ticker(Ticker *ticker)

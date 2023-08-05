@@ -19,7 +19,8 @@ HEADERS = $(wildcard *.h)
 
 $(TARGET): $(OBJECTS)
 	mkdir -p bin
-	$(CC) $(subst src/, bin/, $(OBJECTS)) -Wall $(LIBS) -o bin/$@
+	$(CC) $(CFLAGS) -c $(TARGET).c -o bin/$(TARGET).o
+	$(CC) $(subst src/, bin/, $(OBJECTS)) bin/$(TARGET).o -Wall $(LIBS) -o bin/$@
 
 build-run: clean default run clean-objs
 

@@ -80,7 +80,7 @@ CURLcode perform_get(char *url, Node *queries, ResponseJSON *mem)
 }
 
 // get_ticker retrieve tickers from a given pair
-TickerResponse *get_ticker(TickersQueryParams *query)
+APIResponse *get_ticker(TickersQueryParams *query)
 {
     // check for query
     if (query == NULL)
@@ -100,7 +100,7 @@ TickerResponse *get_ticker(TickersQueryParams *query)
     if (ret != CURLE_OK)
         return NULL;
 
-    TickerResponse *resp = parse_ticker_response(mem.chunk);
+    APIResponse *resp = parse_api_response(mem.chunk, parse_ticker_response_cb);
 
     free(mem.chunk);
 
@@ -108,7 +108,7 @@ TickerResponse *get_ticker(TickersQueryParams *query)
 }
 
 // get_time_server retrieve current time in bybit server
-TimeServerResponse *get_time_server()
+APIResponse *get_time_server()
 {
     char url[38];
     sprintf(url, "%s%s", DOMAIN_MAINNET, SERVER_TIME_PATH);
@@ -120,7 +120,7 @@ TimeServerResponse *get_time_server()
     if (ret != CURLE_OK)
         return NULL;
 
-    TimeServerResponse *resp = parse_ts_response(mem.chunk);
+    APIResponse *resp = parse_api_response(mem.chunk, parse_ts_response_cb);
 
     free(mem.chunk);
 
@@ -128,7 +128,7 @@ TimeServerResponse *get_time_server()
 }
 
 // query for historycal klines
-KlineResponse *get_kline(KlineQueryParams *query)
+APIResponse *get_kline(KlineQueryParams *query)
 {
     char url[128];
     sprintf(url, "%s%s", DOMAIN_MAINNET, KLINE_PATH);
@@ -140,14 +140,14 @@ KlineResponse *get_kline(KlineQueryParams *query)
     if (ret != CURLE_OK)
         return NULL;
 
-    KlineResponse *resp = parse_kline_response(mem.chunk);
+    APIResponse *resp = parse_api_response(mem.chunk, parse_kline_response_cb);
 
     free(mem.chunk);
 
     return resp;
 }
 
-KlineResponse *get_mark_price_kline(KlineQueryParams *query)
+APIResponse *get_mark_price_kline(KlineQueryParams *query)
 {
     char url[256];
     sprintf(url, "%s%s", DOMAIN_MAINNET, MARK_PRICE_KLINE_PATH);
@@ -159,14 +159,15 @@ KlineResponse *get_mark_price_kline(KlineQueryParams *query)
     if (ret != CURLE_OK)
         return NULL;
 
-    KlineResponse *resp = parse_price_kline_response(mem.chunk);
+    APIResponse *resp = parse_api_response(mem.chunk, parse_price_kline_response_cb);
 
     free(mem.chunk);
 
     return resp;
 }
 
-OrderBookResponse *get_order_book(OrderBookQuery *query)
+// get_order_book retrieve information about order book
+APIResponse *get_order_book(OrderBookQuery *query)
 {
     char url[128];
     sprintf(url, "%s%s", DOMAIN_MAINNET, ORDERBOOK_PATH);
@@ -179,7 +180,7 @@ OrderBookResponse *get_order_book(OrderBookQuery *query)
         return NULL;
 
 
-    OrderBookResponse *resp = parse_order_book_response(mem.chunk);
+    APIResponse *resp = parse_api_response(mem.chunk, parse_order_book_response_cb);
 
     free(mem.chunk);
 

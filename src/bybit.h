@@ -51,10 +51,10 @@ typedef struct
 
 Client *new(char *api_key, char *api_secret);
 CURL *http_client();
-TickerResponse *get_ticker(TickersQueryParams *query);
-TimeServerResponse *get_time_server();
-KlineResponse *get_kline(KlineQueryParams *query);
-KlineResponse *get_mark_price_kline(KlineQueryParams *query);
-OrderBookResponse *get_order_book(OrderBookQuery *query);
+APIResponse *get_ticker(TickersQueryParams *query);
+APIResponse *get_time_server();
+APIResponse *get_kline(KlineQueryParams *query);
+APIResponse *get_mark_price_kline(KlineQueryParams *query);
+APIResponse *get_order_book(OrderBookQuery *query);
 
 #endif
