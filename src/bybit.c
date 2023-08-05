@@ -13,7 +13,7 @@
 Client *new(char *api_key, char *api_secret)
 {
     Client *clt = malloc(sizeof(Client));
-    if (clt == NULL)     
+    if (clt == NULL)
         return NULL;
 
     clt->api_key = api_key;
@@ -43,25 +43,16 @@ CURL *http_client()
     return hnd;
 }
 
-TickerResponse *get_ticker(TickersQueryParams *query)
+CURLcode perform_get(char *url, Node *queries, ResponseJSON *mem)
 {
-    // check for query
-    if (query == NULL)
-        return NULL;
-
-    // category it's a required parameter
-    if (query->category == NULL && (strlen(query->category) == 0))
-        return NULL;
-    
-    char url[128];
-    sprintf(url, "%s%s", DOMAIN_MAINNET, TICKERS_PATH);
     CURL *hnd_url = curl_url();
     CURL *hnd = http_client();
     curl_url_set(hnd_url, CURLUPART_URL, url, 0);
 
     // build queries
-    struct Node *cur = query->_queries;
-    while (cur != NULL) {
+    struct Node *cur = queries;
+    while (cur != NULL)
+    {
         _queryElement *query = (_queryElement *)cur->val;
         if (!query)
             break;
@@ -72,23 +63,43 @@ TickerResponse *get_ticker(TickersQueryParams *query)
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
 
-    // setting memory to store response
-    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
-
     curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)&mem);
+    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)mem);
 
     // make http request asking for the tickers
     CURLcode ret = curl_easy_perform(hnd);
-    if (ret != CURLE_OK)
-        printf("ERROR CODE: %d\n", ret);
 
-    TickerResponse *resp = parse_ticker_response(mem.chunk);
-
-    // cleaning queries
+    // cleaning handler
     curl_easy_cleanup(hnd);
     hnd = NULL;
     curl_url_cleanup(hnd_url);
+
+    return ret;
+}
+
+// get_ticker retrieve tickers from a given pair
+TickerResponse *get_ticker(TickersQueryParams *query)
+{
+    // check for query
+    if (query == NULL)
+        return NULL;
+
+    // category it's a required parameter
+    if (query->category == NULL && (strlen(query->category) == 0))
+        return NULL;
+
+    char url[128];
+    sprintf(url, "%s%s", DOMAIN_MAINNET, TICKERS_PATH);
+
+    // setting memory to store response
+    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
+
+    CURLcode ret = perform_get(url, query->_queries, &mem);
+    if (ret != CURLE_OK)
+        return NULL;
+
+    TickerResponse *resp = parse_ticker_response(mem.chunk);
+
     free(mem.chunk);
 
     return resp;
@@ -99,29 +110,16 @@ TimeServerResponse *get_time_server()
 {
     char url[38];
     sprintf(url, "%s%s", DOMAIN_MAINNET, SERVER_TIME_PATH);
-    CURL *hnd_url = curl_url();
-    CURL *hnd = http_client();
-    curl_url_set(hnd_url, CURLUPART_URL, url, 0);
-
-    // setting url
-    curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
 
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)&mem);
-
-    // make http request asking for the tickers
-    CURLcode ret = curl_easy_perform(hnd);
+    CURLcode ret = perform_get(url, NULL, &mem);
     if (ret != CURLE_OK)
-        printf("ERROR CODE: %d\n", ret);
+        return NULL;
 
     TimeServerResponse *resp = parse_ts_response(mem.chunk);
 
-    curl_easy_cleanup(hnd);
-    hnd = NULL;
-    curl_url_cleanup(hnd_url);
     free(mem.chunk);
 
     return resp;
@@ -132,39 +130,16 @@ KlineResponse *get_kline(KlineQueryParams *query)
 {
     char url[128];
     sprintf(url, "%s%s", DOMAIN_MAINNET, KLINE_PATH);
-    CURL *hnd_url = curl_url();
-    CURL *hnd = http_client();
-    curl_url_set(hnd_url, CURLUPART_URL, url, 0);
-
-    // build queries
-    struct Node *cur = query->_queries;
-    while (cur != NULL) {
-        _queryElement *query = (_queryElement *)cur->val;
-        if (!query)
-            break;
-        add_query(hnd_url, query->key, query->val);
-        cur = cur->next;
-    }
-
-    // setting url
-    curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
 
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)&mem);
-
-    // make http request asking for the tickers
-    CURLcode ret = curl_easy_perform(hnd);
+    CURLcode ret = perform_get(url, query->_queries, &mem);
     if (ret != CURLE_OK)
-        printf("ERROR CODE: %d\n", ret);
+        return NULL;
 
     KlineResponse *resp = parse_kline_response(mem.chunk);
 
-    curl_easy_cleanup(hnd);
-    hnd = NULL;
-    curl_url_cleanup(hnd_url);
     free(mem.chunk);
 
     return resp;
@@ -174,39 +149,16 @@ KlineResponse *get_mark_price_kline(KlineQueryParams *query)
 {
     char url[256];
     sprintf(url, "%s%s", DOMAIN_MAINNET, MARK_PRICE_KLINE_PATH);
-    CURL *hnd_url = curl_url();
-    CURL *hnd = http_client();
-    curl_url_set(hnd_url, CURLUPART_URL, url, 0);
-
-    // build queries
-    struct Node *cur = query->_queries;
-    while (cur != NULL) {
-        _queryElement *query = (_queryElement *)cur->val;
-        if (!query)
-            break;
-        add_query(hnd_url, query->key, query->val);
-        cur = cur->next;
-    }
-
-    // setting url
-    curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
 
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)&mem);
-
-    // make http request asking for the tickers
-    CURLcode ret = curl_easy_perform(hnd);
+    CURLcode ret = perform_get(url, query->_queries, &mem);
     if (ret != CURLE_OK)
-        printf("ERROR CODE: %d\n", ret);
+        return NULL;
 
     KlineResponse *resp = parse_price_kline_response(mem.chunk);
 
-    curl_easy_cleanup(hnd);
-    hnd = NULL;
-    curl_url_cleanup(hnd_url);
     free(mem.chunk);
 
     return resp;
@@ -216,39 +168,17 @@ OrderBookResponse *get_order_book(OrderBookQuery *query)
 {
     char url[128];
     sprintf(url, "%s%s", DOMAIN_MAINNET, ORDERBOOK_PATH);
-    CURL *hnd_url = curl_url();
-    CURL *hnd = http_client();
-    curl_url_set(hnd_url, CURLUPART_URL, url, 0);
-
-    // build queries
-    struct Node *cur = query->_queries;
-    while (cur != NULL) {
-        _queryElement *query = (_queryElement *)cur->val;
-        if (!query)
-            break;
-        add_query(hnd_url, query->key, query->val);
-        cur = cur->next;
-    }
-
-    // setting url
-    curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
 
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)&mem);
-
-    // make http request asking for the tickers
-    CURLcode ret = curl_easy_perform(hnd);
+    CURLcode ret = perform_get(url, query->_queries, &mem);
     if (ret != CURLE_OK)
-        printf("ERROR CODE: %d\n", ret);
+        return NULL;
+
 
     OrderBookResponse *resp = parse_order_book_response(mem.chunk);
 
-    curl_easy_cleanup(hnd);
-    hnd = NULL;
-    curl_url_cleanup(hnd_url);
     free(mem.chunk);
 
     return resp;

@@ -21,23 +21,8 @@ int main(int argc, char *argv[])
 	// retrieve_ticker();
 	// retrieve_time_server();
 	// retrieve_kline();
-	retrieve_price_kline();
-	// retrieve_order_book();
-	// TickersQueryParams *query = build_ticker_query("spot", "TONUSDT", "TON", "lala");
-	// if (!query)
-	//   return 1;
-
-	// Node *cur = query->_queries;
-	// while (cur != NULL) {
-	//   _queryElement *elem = (_queryElement *)cur->val;
-	//   if (!elem)
-	//     break;
-	//   printf("------------------>\n");
-	//   printf("KEY: %s\n", elem->key);
-	//   printf("VAL: %s\n", elem->val);
-	//   cur = cur->next;
-	// }
-
+	// retrieve_price_kline();
+	retrieve_order_book();
 	return 0;
 }
 
@@ -216,6 +201,7 @@ void retrieve_time_server()
 	printf("time_nano: %s\n", resp->time_nano);
 	free(resp->time_second);
 	free(resp->time_nano);
+	free(resp);
 }
 
 // retrieve ticker example
