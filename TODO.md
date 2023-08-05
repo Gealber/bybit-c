@@ -3,3 +3,4 @@
     1.2 [DONE] I need to add error handling  of unsuccsesful api response
     1.3 I need to add tests as well
     1.4 Document better the methods
+    1.5 Create examples folder.

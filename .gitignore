@@ -1,4 +1,5 @@
 *.o
 *.log
 bin
+examples/bin
 .vscode
