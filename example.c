@@ -5,6 +5,7 @@
 #include "src/request.h"
 #include "src/response.h"
 
+void place_order();
 void retrieve_ticker();
 void retrieve_time_server();
 void retrieve_kline();
@@ -18,12 +19,65 @@ void print_order_book(OrderB *order);
 int main(int argc, char *argv[])
 {
 	/*Uncomment these lines to run examples*/
-	retrieve_time_server();
+	// retrieve_time_server();
+	place_order();
 	// retrieve_ticker();
 	// retrieve_kline();
 	// retrieve_price_kline();
 	// retrieve_order_book();
 	return 0;
+}
+
+
+void place_order()
+{
+	Client *clt = new("wLRb7YfUhzBYjcs8gY", "kKve5Z13n8t16tV7dooSKfs9robjXX2H6eQD");
+	// Client *clt = new("<API_KEY>", "<API_SECRET>");
+	if (!clt)
+		return ;
+
+	// allocate memory and initialize order request
+	OrderRequest *order_request = init_order_request();
+	if (!order_request)
+		return ;
+
+	order_request->category = "spot";
+	order_request->symbol = "BTCUSDT";
+	order_request->side = "Sell";
+	order_request->order_type = "Market";
+	order_request->qty = "0.1";
+	
+	APIResponse *api_resp = post_order(clt, order_request);
+	if (!api_resp)
+		goto end;
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+	if (!api_resp->result) {
+		printf("RESULT IS NULL\n");
+		goto end;
+	}
+
+	OrderResponse *resp = (OrderResponse *)api_resp->result;
+	if (!resp)
+		goto end;
+
+	printf("ORDER ID: %s\n", resp->order_id);
+	printf("ORDER LINK ID: %s\n", resp->order_link_id);
+	
+	if (resp->order_id) free(resp->order_id);
+	if (resp->order_link_id) free(resp->order_link_id);
+
+end:
+	if (order_request) free(order_request);
+	if (api_resp) free_api_response(api_resp);
+	if (clt) free(clt);
+
+	return ;
 }
 
 // retrieve ticker example
@@ -83,7 +137,7 @@ end:
 	free_api_response(api_resp);
 	if (query)
 	{
-		free_list(&query->_queries, free_query_element_callback);
+		free_list(&query->_queries, free_query_element_cb);
 		free(query);
 	}
 }
@@ -143,7 +197,7 @@ end:
 	free_api_response(api_resp);
 	if (query)
 	{
-		free_list(&query->_queries, free_query_element_callback);
+		free_list(&query->_queries, free_query_element_cb);
 		free(query);
 	}
 }
@@ -199,7 +253,7 @@ end:
 	free_api_response(api_resp);
 	if (query)
 	{
-		free_list(&query->_queries, free_query_element_callback);
+		free_list(&query->_queries, free_query_element_cb);
 		free(query);
 	}
 }
@@ -262,7 +316,7 @@ void retrieve_order_book()
 	cur = resp->asks;
 	while (cur != NULL)
 	{
-		free_order(cur->val);
+		free_orderb(cur->val);
 		tmp = cur;
 		cur = cur->next;
 		free(tmp);
@@ -271,7 +325,7 @@ void retrieve_order_book()
 	cur = resp->bids;
 	while (cur != NULL)
 	{
-		free_order(cur->val);
+		free_orderb(cur->val);
 		tmp = cur;
 		cur = cur->next;
 		free(tmp);
@@ -285,7 +339,7 @@ end:
 	free_api_response(api_resp);
 	if (query)
 	{
-		free_list(&query->_queries, free_query_element_callback);
+		free_list(&query->_queries, free_query_element_cb);
 		free(query);
 	}
 }
@@ -302,7 +356,6 @@ void retrieve_time_server()
 		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
 		goto end;
 	}
-
 
 	TimeServerResponse *resp = (TimeServerResponse *)api_resp->result;
 	if (!resp)

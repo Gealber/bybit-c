@@ -9,6 +9,7 @@ const char *SERVER_TIME_PATH = "/market/time";
 const char *KLINE_PATH = "/market/kline";
 const char *MARK_PRICE_KLINE_PATH = "/market/mark-price-kline";
 const char *ORDERBOOK_PATH = "/market/orderbook";
+const char *PLACE_ORDER_PATH = "/order/create";
 
 const char *USER_AGENT = "bybit-c";
 

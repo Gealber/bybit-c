@@ -1,9 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
 #include <curl/curl.h>
+#include <sodium.h>
 #include "common.h"
-
 
 void add_list_item(Node **list, void *val)
 {
@@ -16,7 +17,7 @@ void add_list_item(Node **list, void *val)
 void free_list(Node **list, void free_val_callback(void *))
 {
     Node *cur = *list;
-    Node *next ;
+    Node *next;
     while (cur != NULL)
     {
         next = cur->next;
@@ -50,7 +51,8 @@ size_t write_json(char *contents, size_t size, size_t nmemb, void *userdata)
     ResponseJSON *mem = (ResponseJSON *)userdata;
 
     char *ptr = realloc(mem->chunk, mem->size + real_size + 1);
-    if (!ptr) {
+    if (!ptr)
+    {
         printf("err: not enough memory realloc returned NULL\n");
 
         return 0;
@@ -67,9 +69,69 @@ size_t write_json(char *contents, size_t size, size_t nmemb, void *userdata)
 char *extract_string_field(const cJSON *json, char *field_name)
 {
     cJSON *item = cJSON_GetObjectItemCaseSensitive(json, field_name);
-    if(cJSON_IsString(item) && (item->valuestring != NULL)) {
+    if (cJSON_IsString(item) && (item->valuestring != NULL))
+    {
         return item->valuestring;
     }
 
     return "";
+}
+
+void add_string_field(cJSON *const json, const char *field_name, char *field)
+{
+    if (field)
+    {
+        cJSON_AddStringToObject(json, field_name, field);
+    }
+}
+
+void add_int_field(cJSON *const json, const char *field_name, int field)
+{
+    cJSON_AddNumberToObject(json, field_name, field);
+}
+
+void add_bool_field(cJSON *const json, const char *field_name, bool field)
+{
+    cJSON_AddStringToObject(json, field_name, bool_to_string(field));
+}
+
+const char *bool_to_string(bool val)
+{
+    if (val)
+        return "true";
+
+    return "false";
+}
+
+char *gen_signature(const char *api_key, const char *api_secret, int64_t ts, char *params)
+{
+    int signature_size = crypto_auth_hmacsha256_BYTES;
+    unsigned char signature[signature_size];
+    int recv_window = 6000;
+    // assuming a max of 10 digits for timestamp
+    // 4 for recv windows
+    size_t rule_size = 10 + strlen(api_key) + 4 + strlen(params) + 1;
+    char rule[rule_size];
+    sprintf(rule, "%ld%s%d%s", ts, api_key, recv_window, params);
+
+    printf("TS: %ld\n", ts);
+    printf("BODY JSON: %s\n", params);
+    printf("RULE: %s\n", rule);
+
+
+    crypto_auth_hmacsha256(signature, (const unsigned char *)rule, strlen(rule), (const unsigned char *)api_secret);
+
+    // return hex signature instead
+    int hex_maxlen = signature_size * 2 + 1;
+    char *hex = calloc(hex_maxlen, sizeof(char));
+    sodium_bin2hex(hex, hex_maxlen, signature, crypto_auth_hmacsha256_BYTES);
+
+    printf("HEX: %s\n", hex);
+
+    return hex;
+}
+
+int64_t timestamp()
+{
+    return time(NULL) * 1000;
 }

@@ -1,6 +1,6 @@
 TARGET = example
 SRC = src
-LIBS = -lcurl
+LIBS = -lcurl -lsodium
 CC = gcc
 CFLAGS = -g -Wall -O3
 

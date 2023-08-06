@@ -11,6 +11,7 @@ typedef struct
 {
     char *api_key;
     char *api_secret;
+    CURL *hnd;
 } Client;
 
 typedef struct
@@ -51,10 +52,18 @@ typedef struct
 
 Client *new(char *api_key, char *api_secret);
 CURL *http_client();
+
+CURLcode perform_get(char *url, Node *queries, ResponseJSON *mem);
+CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem);
+
+// GET requests
 APIResponse *get_ticker(TickersQueryParams *query);
 APIResponse *get_time_server();
 APIResponse *get_kline(KlineQueryParams *query);
 APIResponse *get_mark_price_kline(KlineQueryParams *query);
 APIResponse *get_order_book(OrderBookQuery *query);
+
+// POSTS request
+APIResponse *post_order(Client *clt, OrderRequest *order_request);
 
 #endif

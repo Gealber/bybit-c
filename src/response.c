@@ -22,7 +22,7 @@ APIResponse *parse_api_response(char *text, void *result_parsing_cb(const cJSON 
 
     const cJSON *ret_code = NULL;
 
-    if (strlen(text) == 0)
+    if (!text || strlen(text) == 0)
         return NULL;
     cJSON *json = cJSON_Parse(text);
     if (!json)
@@ -247,6 +247,35 @@ OrderBookResponse *parse_order_book_response(const cJSON *json)
             OrderB *order = build_orderb(b_item);
             add_list_item(&resp->bids, order);
         }
+    }
+
+    return resp;
+}
+
+void *parse_order_response_cb(const cJSON *json)
+{
+    return parse_order_response(json);
+}
+
+OrderResponse *parse_order_response(const cJSON *json)
+{
+    OrderResponse *resp = malloc(sizeof(OrderResponse));
+    if (!resp) return NULL;
+    resp->order_id = NULL;
+    resp->order_link_id = NULL;
+
+    const cJSON *result = NULL;
+
+    // cursor of the list
+    result = cJSON_GetObjectItemCaseSensitive(json, "result");
+    if (cJSON_IsObject(result))
+    {
+        char *order_id_str = extract_string_field(result, "orderId");
+        if (strlen(order_id_str) != 0)
+            resp->order_id = strdup(order_id_str);
+        char *order_link_id_str = extract_string_field(result, "orderLinkId");
+        if (strlen(order_link_id_str) != 0)
+            resp->order_link_id = strdup(order_link_id_str);
     }
 
     return resp;

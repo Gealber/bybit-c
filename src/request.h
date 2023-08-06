@@ -2,13 +2,13 @@
 #define REQUEST_H
 
 #include "cJSON.h"
+#include "common.h"
 
 typedef struct
 {
     char *key;
     char *val;
 } _queryElement;
-
 
 typedef struct
 {
@@ -76,21 +76,65 @@ typedef struct
     char *size;  // size of the order
 } OrderB;
 
+typedef struct
+{
+    char *category;
+    char *symbol;
+    int is_leverage;
+    char *side;
+    char *order_type;
+    char *qty;
+    char *price;
+    int trigger_direction;
+    char *order_filter;
+    char *trigger_price;
+    char *trigger_by;
+    char *order_lv;
+    char *time_in_force;
+    int position_idx;
+    char *order_link_id;
+    char *take_profit;
+    char *stop_loss;
+    char *tp_trigger_by;
+    char *sl_trigger_by;
+    bool reduce_only;
+    bool close_on_trigger;
+    char *smp_type;
+    bool mmp;
+    char *tpsl_mode;
+    char *tp_limit_price;
+    char *sl_limit_price;
+    char *tp_order_type;
+    char *sl_order_type;
+} OrderRequest;
+
+
+// building structs from response
 Ticker *build_ticker(const cJSON *list_item);
 void free_ticker(Ticker *ticker);
 Kline *build_kline(const cJSON *list_item);
 Kline *build_price_kline(const cJSON *list_item);
 OrderB *build_orderb(const cJSON *list_item);
+
+// query structs
 TickersQueryParams *build_ticker_query(char *category, char *symbol, char *base_coin, char *exp_date);
 KlineQueryParams *build_kline_query(char *category, char *symbol, char *interval, char *start, char *end, char *limit);
 OrderBookQuery *build_order_book_query(char *category, char *symbol, char *limit);
 _queryElement *create_query_element(char *key, char *val);
 
+// struct to json
+// initialize an empty OrderRequest struct
+OrderRequest *init_order_request();
+char *order_request_tojson(OrderRequest *order_request);
+
 // methods for releasing memory
 void free_kline(Kline *kline);
 void free_price_kline(Kline *kline);
-void free_order(OrderB *order);
+void free_orderb(OrderB *order);
+// realeasing memory for queries
 void free_query_element(_queryElement *elem);
-void free_query_element_callback(void *elem);
+void free_query_element_cb(void *elem);
+// realeasing body json
+void free_order_request(OrderRequest *order_request);
 
 #endif

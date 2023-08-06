@@ -43,8 +43,8 @@ CURL *http_client()
     return hnd;
 }
 
-// perfomr_get perform a GET http request storing its response
-// in mem
+// perform_get perform a GET http request storing its response
+// in the mem passed
 CURLcode perform_get(char *url, Node *queries, ResponseJSON *mem)
 {
     CURL *hnd_url = curl_url();
@@ -75,6 +75,64 @@ CURLcode perform_get(char *url, Node *queries, ResponseJSON *mem)
     curl_easy_cleanup(hnd);
     hnd = NULL;
     curl_url_cleanup(hnd_url);
+
+    return ret;
+}
+
+// perform_post perform a POST http request storing its response
+// in the mem passed. Authenticated method will need to receive the client instance.
+CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
+{
+    CURL *hnd_url = curl_url();
+    CURL *hnd = http_client();
+    curl_url_set(hnd_url, CURLUPART_URL, url, CURLU_URLENCODE);
+
+    // generating signature
+    int64_t ts = timestamp();
+    char *hex_signature = gen_signature(clt->api_key, clt->api_secret, ts, body);
+
+    // headers
+    char api_key_header[36];
+    sprintf(api_key_header, "X-BAPI-API-KEY: %s", clt->api_key);
+    char ts_header[48];
+    sprintf(ts_header, "X-BAPI-TIMESTAMP: %ld", ts);
+    char sign_header[13 + strlen(hex_signature) + 1];
+    // printf("HEX SIGNATURE: %s SIZE: %ld\n", hex_signature, strlen(hex_signature));
+    sprintf(sign_header, "X-BAPI-SIGN: %s", hex_signature);
+
+    struct curl_slist *headers;
+    headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    headers = curl_slist_append(headers, api_key_header);
+    headers = curl_slist_append(headers, ts_header);
+    headers = curl_slist_append(headers, sign_header);
+    headers = curl_slist_append(headers, "X-BAPI-RECV-WINDOW: 6000");
+
+    // setting url
+    curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
+    // setting memory to write response
+    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
+    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)mem);
+    // setting header application/json
+    curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
+    // specifying json body
+    curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, body);
+    curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)strlen(body));
+
+    // make http request asking for the tickers
+    CURLcode ret = curl_easy_perform(hnd);
+
+    // cleaning handler
+    curl_easy_cleanup(hnd);
+    hnd = NULL;
+    // cleaning list of headers
+    curl_slist_free_all(headers);
+    headers = NULL;
+    // cleaning url builder
+    curl_url_cleanup(hnd_url);
+    hnd_url = NULL;
+    // we need to free signature as well
+    free(hex_signature);
 
     return ret;
 }
@@ -120,7 +178,11 @@ APIResponse *get_time_server()
     if (ret != CURLE_OK)
         return NULL;
 
-    APIResponse *resp = parse_api_response(mem.chunk, parse_ts_response_cb);
+    APIResponse *resp = NULL;
+    if (mem.size != 0)
+        resp = parse_api_response(mem.chunk, parse_ts_response_cb);
+    else
+        printf("NO RESPONSE FROM API\n");
 
     free(mem.chunk);
 
@@ -179,10 +241,34 @@ APIResponse *get_order_book(OrderBookQuery *query)
     if (ret != CURLE_OK)
         return NULL;
 
-
     APIResponse *resp = parse_api_response(mem.chunk, parse_order_book_response_cb);
 
     free(mem.chunk);
+
+    return resp;
+}
+
+APIResponse *post_order(Client *clt, OrderRequest *order_request)
+{
+    char url[46];
+    sprintf(url, "%s%s", DOMAIN_TESTNET, PLACE_ORDER_PATH);
+
+    // setting memory to store response
+    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
+
+    char *body = order_request_tojson(order_request);
+
+    CURLcode ret = perform_post(clt, url, body, &mem);
+    if (ret != CURLE_OK)
+        return NULL;
+
+    APIResponse *resp = NULL;
+    if (mem.size != 0)
+        resp = parse_api_response(mem.chunk, parse_order_response_cb);
+
+    if (mem.chunk)
+        free(mem.chunk);
+    free(body);
 
     return resp;
 }
