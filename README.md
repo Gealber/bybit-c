@@ -6,7 +6,7 @@ Implementation in C of [Bybit API](https://bybit-exchange.github.io/docs/). This
 
 1. [libcurl](https://curl.se/libcurl/), without this library would be literally a pain in the ass to do this job.
 2. [cJSON](https://github.com/DaveGamble/cJSON), to parse json.
-3. [libsodium](https://libsodium.gitbook.io/doc/installation), in order to sing requests for authenticated endpoints.
+3. [openssl](https://www.openssl.org/), in order to sing requests for authenticated endpoints.
 
 ## Endpoints supported
 

@@ -31,8 +31,7 @@ int main(int argc, char *argv[])
 
 void place_order()
 {
-	Client *clt = new("wLRb7YfUhzBYjcs8gY", "kKve5Z13n8t16tV7dooSKfs9robjXX2H6eQD");
-	// Client *clt = new("<API_KEY>", "<API_SECRET>");
+	Client *clt = new("<API_KEY>", "<API_SECRET>");
 	if (!clt)
 		return ;
 
@@ -43,9 +42,9 @@ void place_order()
 
 	order_request->category = "spot";
 	order_request->symbol = "BTCUSDT";
-	order_request->side = "Sell";
+	order_request->side = "Buy";
 	order_request->order_type = "Market";
-	order_request->qty = "0.1";
+	order_request->qty = "10000";
 	
 	APIResponse *api_resp = post_order(clt, order_request);
 	if (!api_resp)

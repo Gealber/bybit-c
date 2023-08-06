@@ -355,6 +355,8 @@ char *order_request_tojson(OrderRequest *order_request)
     add_string_field(json, "slOrderType", order_request->sl_order_type);
 
     buff = cJSON_Print(json);
+    clean_string(buff);
+    printf("CLEAN BUFF: %s\n", buff);
 
     cJSON_Delete(json);
 

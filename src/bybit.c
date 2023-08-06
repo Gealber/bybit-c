@@ -97,7 +97,6 @@ CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
     char ts_header[48];
     sprintf(ts_header, "X-BAPI-TIMESTAMP: %ld", ts);
     char sign_header[13 + strlen(hex_signature) + 1];
-    // printf("HEX SIGNATURE: %s SIZE: %ld\n", hex_signature, strlen(hex_signature));
     sprintf(sign_header, "X-BAPI-SIGN: %s", hex_signature);
 
     struct curl_slist *headers;
@@ -106,7 +105,7 @@ CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
     headers = curl_slist_append(headers, api_key_header);
     headers = curl_slist_append(headers, ts_header);
     headers = curl_slist_append(headers, sign_header);
-    headers = curl_slist_append(headers, "X-BAPI-RECV-WINDOW: 6000");
+    headers = curl_slist_append(headers, "X-BAPI-RECV-WINDOW: 5000");
 
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
