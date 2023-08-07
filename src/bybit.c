@@ -20,10 +20,12 @@ const char *MARK_PRICE_KLINE_PATH = "/market/mark-price-kline";
 const char *ORDERBOOK_PATH = "/market/orderbook";
 const char *PLACE_ORDER_PATH = "/order/create";
 const char *AMEND_ORDER_PATH = "/order/amend";
+const char *CANCEL_ORDER_PATH = "/order/cancel";
+
 // USER AGENT
 const char *USER_AGENT = "bybit-c";
 
-const int DEFAULT_RECV_WINDOW = 6000;
+const int DEFAULT_RECV_WINDOW = 7000;
 
 // New creates a new Client instance
 // which will contain information about API KEY and API SECRET
@@ -266,10 +268,11 @@ APIResponse *get_order_book(OrderBookQuery *query)
     return resp;
 }
 
+// post_order place an order in the exchange
 APIResponse *post_order(Client *clt, OrderRequest *order_request)
 {
     char url[46];
-    sprintf(url, "%s%s", DOMAIN_MAINNET, PLACE_ORDER_PATH);
+    sprintf(url, "%s%s", DOMAIN_TESTNET, PLACE_ORDER_PATH);
 
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
@@ -291,6 +294,7 @@ APIResponse *post_order(Client *clt, OrderRequest *order_request)
     return resp;
 }
 
+// amend_order 
 APIResponse *post_amend_order(Client *clt, AmendOrderRequest *amend_order_request)
 {
     char url[46];
@@ -300,6 +304,32 @@ APIResponse *post_amend_order(Client *clt, AmendOrderRequest *amend_order_reques
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
     char *body = amend_order_request_tojson(amend_order_request);
+
+    CURLcode ret = perform_post(clt, url, body, &mem);
+    if (ret != CURLE_OK)
+        return NULL;
+
+    APIResponse *resp = NULL;
+    if (mem.size != 0)
+        resp = parse_api_response(mem.chunk, parse_order_response_cb);
+
+    if (mem.chunk)
+        free(mem.chunk);
+    free(body);
+
+    return resp;
+}
+
+// cancel_order 
+APIResponse *post_cancel_order(Client *clt, CancelOrderRequest *cancel_order_request)
+{
+    char url[46];
+    sprintf(url, "%s%s", DOMAIN_TESTNET, CANCEL_ORDER_PATH);
+
+    // setting memory to store response
+    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
+
+    char *body = cancel_order_request_tojson(cancel_order_request);
 
     CURLcode ret = perform_post(clt, url, body, &mem);
     if (ret != CURLE_OK)

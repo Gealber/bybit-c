@@ -127,6 +127,15 @@ typedef struct
     char *sl_limit_price;
 } AmendOrderRequest;
 
+typedef struct
+{
+    char *category;
+    char *symbol;
+    char *order_id;
+    char *order_link_id;
+    char *order_filter;
+} CancelOrderRequest;
+
 // building structs from response
 Ticker *build_ticker(const cJSON *list_item);
 void free_ticker(Ticker *ticker);
@@ -146,6 +155,8 @@ OrderRequest *init_order_request();
 char *order_request_tojson(OrderRequest *order_request);
 AmendOrderRequest *init_amend_order_request();
 char *amend_order_request_tojson(AmendOrderRequest *amend_order_request);
+CancelOrderRequest *init_cancel_order_request();
+char *cancel_order_request_tojson(CancelOrderRequest *cancel_order_request);
 
 // methods for releasing memory
 void free_kline(Kline *kline);

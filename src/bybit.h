@@ -66,6 +66,7 @@ APIResponse *get_order_book(OrderBookQuery *query);
 // POSTS request
 APIResponse *post_order(Client *clt, OrderRequest *order_request);
 APIResponse *post_amend_order(Client *clt, AmendOrderRequest *amend_order_request);
+APIResponse *post_cancel_order(Client *clt, CancelOrderRequest *cancel_order_request);
 
 // UTILS
 char *gen_signature(const char *api_key, const char *api_secret, int64_t ts, char *params);

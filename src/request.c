@@ -364,7 +364,7 @@ char *order_request_tojson(OrderRequest *order_request)
 
 AmendOrderRequest *init_amend_order_request()
 {
-    AmendOrderRequest *amend = calloc(1, sizeof(OrderRequest));
+    AmendOrderRequest *amend = calloc(1, sizeof(AmendOrderRequest));
     if (!amend)
         return NULL;
 
@@ -418,6 +418,42 @@ char *amend_order_request_tojson(AmendOrderRequest *amend_order_request)
 
     return buff;
 }
+
+CancelOrderRequest *init_cancel_order_request()
+{
+    CancelOrderRequest *cancel = calloc(1, sizeof(CancelOrderRequest));
+    if (!cancel)
+        return NULL;
+
+    cancel->category = NULL;
+    cancel->symbol = NULL;
+    cancel->order_id = NULL;
+    cancel->order_link_id = NULL;
+
+    return cancel;
+}
+
+char *cancel_order_request_tojson(CancelOrderRequest *cancel_order_request)
+{
+    char *buff = NULL;
+
+    cJSON *json = cJSON_CreateObject();
+    if (!json)
+        return NULL;
+
+    add_string_field(json, "category", cancel_order_request->category);
+    add_string_field(json, "symbol", cancel_order_request->symbol);
+    add_string_field(json, "orderId", cancel_order_request->order_id);
+    add_string_field(json, "orderLinkId", cancel_order_request->order_link_id);
+
+    buff = cJSON_Print(json);
+    clean_string(buff);
+
+    cJSON_Delete(json);
+
+    return buff;
+}
+
 
 void free_kline(Kline *kline)
 {
