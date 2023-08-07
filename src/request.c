@@ -356,7 +356,63 @@ char *order_request_tojson(OrderRequest *order_request)
 
     buff = cJSON_Print(json);
     clean_string(buff);
-    printf("CLEAN BUFF: %s\n", buff);
+
+    cJSON_Delete(json);
+
+    return buff;
+}
+
+AmendOrderRequest *init_amend_order_request()
+{
+    AmendOrderRequest *amend = calloc(1, sizeof(OrderRequest));
+    if (!amend)
+        return NULL;
+
+    amend->category = NULL;
+    amend->symbol = NULL;
+    amend->order_id = NULL;
+    amend->order_link_id = NULL;
+    amend->order_lv = NULL;
+    amend->trigger_price = NULL;
+    amend->qty = NULL;
+    amend->price = NULL;
+    amend->take_profit = NULL;
+    amend->stop_loss = NULL;
+    amend->tp_trigger_by = NULL;
+    amend->sl_trigger_by = NULL;
+    amend->trigger_by = NULL;
+    amend->tp_limit_price = NULL;
+    amend->sl_limit_price = NULL;
+
+    return amend;
+}
+
+char *amend_order_request_tojson(AmendOrderRequest *amend_order_request)
+{
+    char *buff = NULL;
+
+    cJSON *json = cJSON_CreateObject();
+    if (!json)
+        return NULL;
+
+    add_string_field(json, "category", amend_order_request->category);
+    add_string_field(json, "symbol", amend_order_request->symbol);
+    add_string_field(json, "orderId", amend_order_request->order_id);
+    add_string_field(json, "orderLinkId", amend_order_request->order_link_id);
+    add_string_field(json, "orderLv", amend_order_request->order_lv);
+    add_string_field(json, "triggerPrice", amend_order_request->trigger_price);
+    add_string_field(json, "qty", amend_order_request->qty);
+    add_string_field(json, "price", amend_order_request->price);
+    add_string_field(json, "takeProfit", amend_order_request->take_profit);
+    add_string_field(json, "stopLoss", amend_order_request->stop_loss);
+    add_string_field(json, "triggerBy", amend_order_request->trigger_by);
+    add_string_field(json, "tpTriggerBy", amend_order_request->tp_trigger_by);
+    add_string_field(json, "slTriggerBy", amend_order_request->sl_trigger_by);
+    add_string_field(json, "tpLimitPrice", amend_order_request->tp_limit_price);
+    add_string_field(json, "slLimitPrice", amend_order_request->sl_limit_price);
+
+    buff = cJSON_Print(json);
+    clean_string(buff);
 
     cJSON_Delete(json);
 

@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <curl/curl.h>
-#include <openssl/evp.h>
-#include <openssl/hmac.h>
 #include "common.h"
 
 void add_list_item(Node **list, void *val)
@@ -102,40 +100,6 @@ const char *bool_to_string(bool val)
         return "true";
 
     return "false";
-}
-
-char *gen_signature(const char *api_key, const char *api_secret, int64_t ts, char *params)
-{
-    int recv_window = 5000;
-    // assuming a max of 13 digits for timestamp
-    // 4 for recv windows
-    size_t rule_size = 13 + strlen(api_key) + 4 + strlen(params) + 1;
-    char rule[rule_size];
-    sprintf(rule, "%ld%s%d%s", ts, api_key, recv_window, params);
-
-    int keylen = strlen(api_secret);
-    const unsigned char *data = (const unsigned char *)rule;
-    int datalen = strlen((char *)data);
-    unsigned char *result = NULL;
-    unsigned int resultlen = -1;
-
-    result = hmac_sha256((const void *)api_secret, keylen, data, datalen, result, &resultlen);
-
-    char *hex = calloc(resultlen * 2 + 1, sizeof(char));
-    char *ptr = &hex[0];
-
-    int i = 0;
-    for (i = 0; i < resultlen; i++)
-    {
-        ptr += sprintf(ptr, "%02X", result[i]);
-    }
-
-    return hex;
-}
-
-unsigned char *hmac_sha256(const void *key, int keylen, const unsigned char *data, int datalen, unsigned char *result, unsigned int *resultlen)
-{
-    return HMAC(EVP_sha256(), key, keylen, data, datalen, result, resultlen);
 }
 
 int64_t timestamp()

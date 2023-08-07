@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include "cJSON.h"
 
+
 typedef enum
 {
     FALSE = 0,
@@ -35,8 +36,6 @@ void add_list_item(Node **list, void *val);
 
 // generate signature
 int64_t timestamp();
-unsigned char *hmac_sha256(const void *key, int keylen, const unsigned char *data, int datalen, unsigned char *result, unsigned int *resultlen);
-char *gen_signature(const char *api_key, const char *api_secret, int64_t ts, char *params);
 
 // clean list
 void free_list(Node **list, void free_val_callback(void *));

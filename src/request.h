@@ -108,6 +108,24 @@ typedef struct
     char *sl_order_type;
 } OrderRequest;
 
+typedef struct
+{
+    char *category;
+    char *symbol;
+    char *order_id;
+    char *order_link_id;
+    char *order_lv;
+    char *trigger_price;
+    char *qty;
+    char *price;
+    char *take_profit;
+    char *stop_loss;
+    char *tp_trigger_by;
+    char *sl_trigger_by;
+    char *trigger_by;
+    char *tp_limit_price;
+    char *sl_limit_price;
+} AmendOrderRequest;
 
 // building structs from response
 Ticker *build_ticker(const cJSON *list_item);
@@ -126,6 +144,8 @@ _queryElement *create_query_element(char *key, char *val);
 // initialize an empty OrderRequest struct
 OrderRequest *init_order_request();
 char *order_request_tojson(OrderRequest *order_request);
+AmendOrderRequest *init_amend_order_request();
+char *amend_order_request_tojson(AmendOrderRequest *amend_order_request);
 
 // methods for releasing memory
 void free_kline(Kline *kline);

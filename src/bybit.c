@@ -1,12 +1,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include "bybit.h"
-#include "const.h"
 #include "common.h"
 #include "request.h"
 #include "response.h"
 #include "cJSON.h"
+
+// ENDPOINTS AND DOMAIN
+const char *DOMAIN_TESTNET = "https://api-testnet.bybit.com/v5";
+const char *DOMAIN_MAINNET = "https://api.bybit.com/v5";
+const char *ANNOUNCEMENT_PATH = "/announcements/index";
+const char *TICKERS_PATH = "/market/tickers";
+const char *SERVER_TIME_PATH = "/market/time";
+const char *KLINE_PATH = "/market/kline";
+const char *MARK_PRICE_KLINE_PATH = "/market/mark-price-kline";
+const char *ORDERBOOK_PATH = "/market/orderbook";
+const char *PLACE_ORDER_PATH = "/order/create";
+const char *AMEND_ORDER_PATH = "/order/amend";
+// USER AGENT
+const char *USER_AGENT = "bybit-c";
+
+const int DEFAULT_RECV_WINDOW = 6000;
 
 // New creates a new Client instance
 // which will contain information about API KEY and API SECRET
@@ -98,6 +115,8 @@ CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
     sprintf(ts_header, "X-BAPI-TIMESTAMP: %ld", ts);
     char sign_header[13 + strlen(hex_signature) + 1];
     sprintf(sign_header, "X-BAPI-SIGN: %s", hex_signature);
+    char recv_window[32];
+    sprintf(recv_window, "X-BAPI-RECV-WINDOW: %d", DEFAULT_RECV_WINDOW);
 
     struct curl_slist *headers;
     headers = NULL;
@@ -105,7 +124,7 @@ CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
     headers = curl_slist_append(headers, api_key_header);
     headers = curl_slist_append(headers, ts_header);
     headers = curl_slist_append(headers, sign_header);
-    headers = curl_slist_append(headers, "X-BAPI-RECV-WINDOW: 5000");
+    headers = curl_slist_append(headers, recv_window);
 
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
@@ -250,7 +269,7 @@ APIResponse *get_order_book(OrderBookQuery *query)
 APIResponse *post_order(Client *clt, OrderRequest *order_request)
 {
     char url[46];
-    sprintf(url, "%s%s", DOMAIN_TESTNET, PLACE_ORDER_PATH);
+    sprintf(url, "%s%s", DOMAIN_MAINNET, PLACE_ORDER_PATH);
 
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
@@ -270,4 +289,64 @@ APIResponse *post_order(Client *clt, OrderRequest *order_request)
     free(body);
 
     return resp;
+}
+
+APIResponse *post_amend_order(Client *clt, AmendOrderRequest *amend_order_request)
+{
+    char url[46];
+    sprintf(url, "%s%s", DOMAIN_TESTNET, AMEND_ORDER_PATH);
+
+    // setting memory to store response
+    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
+
+    char *body = amend_order_request_tojson(amend_order_request);
+
+    CURLcode ret = perform_post(clt, url, body, &mem);
+    if (ret != CURLE_OK)
+        return NULL;
+
+    APIResponse *resp = NULL;
+    if (mem.size != 0)
+        resp = parse_api_response(mem.chunk, parse_order_response_cb);
+
+    if (mem.chunk)
+        free(mem.chunk);
+    free(body);
+
+    return resp;
+}
+
+
+/* UTILS */
+char *gen_signature(const char *api_key, const char *api_secret, int64_t ts, char *params)
+{
+    // assuming a max of 13 digits for timestamp
+    // 4 for recv windows
+    size_t rule_size = 13 + strlen(api_key) + 4 + strlen(params) + 1;
+    char rule[rule_size];
+    sprintf(rule, "%ld%s%d%s", ts, api_key, DEFAULT_RECV_WINDOW, params);
+
+    int keylen = strlen(api_secret);
+    const unsigned char *data = (const unsigned char *)rule;
+    int datalen = strlen((char *)data);
+    unsigned char *result = NULL;
+    unsigned int resultlen = -1;
+
+    result = hmac_sha256((const void *)api_secret, keylen, data, datalen, result, &resultlen);
+
+    char *hex = calloc(resultlen * 2 + 1, sizeof(char));
+    char *ptr = &hex[0];
+
+    int i = 0;
+    for (i = 0; i < resultlen; i++)
+    {
+        ptr += sprintf(ptr, "%02X", result[i]);
+    }
+
+    return hex;
+}
+
+unsigned char *hmac_sha256(const void *key, int keylen, const unsigned char *data, int datalen, unsigned char *result, unsigned int *resultlen)
+{
+    return HMAC(EVP_sha256(), key, keylen, data, datalen, result, resultlen);
 }
