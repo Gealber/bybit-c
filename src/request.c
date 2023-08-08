@@ -178,6 +178,73 @@ OrderBookQuery *build_order_book_query(char *category, char *symbol, char *limit
     return params;
 }
 
+OpenOrdersQuery *build_open_orders_query(char *category, char *symbol, char *settle_coin, char *order_id, char *order_link_id, int open_only, char *order_filter, int limit, char *cursor)
+{
+    OpenOrdersQuery *params = malloc(sizeof(OpenOrdersQuery));
+    if (!params)
+        return NULL;
+
+    params->category = category;
+    params->symbol = symbol;
+    params->settle_coin = settle_coin;
+    params->order_id = order_id;
+    params->order_link_id = order_link_id;
+    params->open_only = open_only;
+    params->order_filter = order_filter;
+    params->limit = limit;
+    params->cursor = cursor;
+
+    params->_queries = (Node *)calloc(1, sizeof(Node));
+
+    // build _queries list
+    if (category != NULL && strlen(category) != 0)
+    {
+        _queryElement *category_query = create_query_element("category", category);
+        add_list_item(&params->_queries, category_query);
+    }
+    if (symbol != NULL && strlen(symbol) != 0)
+    {
+        _queryElement *symbol_query = create_query_element("symbol", symbol);
+        add_list_item(&params->_queries, symbol_query);
+    }
+    if (settle_coin != NULL && strlen(settle_coin) != 0)
+    {
+        _queryElement *settle_coin_query = create_query_element("settleCoin", settle_coin);
+        add_list_item(&params->_queries, settle_coin_query);
+    }
+    if (order_id != NULL && strlen(order_id) != 0)
+    {
+        _queryElement *order_id_query = create_query_element("orderId", order_id);
+        add_list_item(&params->_queries, order_id_query);
+    }
+    if (order_link_id != NULL && strlen(order_link_id) != 0)
+    {
+        _queryElement *order_link_id_query = create_query_element("orderLinkId", order_link_id);
+        add_list_item(&params->_queries, order_link_id_query);
+    }
+    _queryElement *open_only_query = create_query_element("openOnly", (char *)bool_to_string(open_only));
+    add_list_item(&params->_queries, open_only_query);
+    if (order_filter != NULL && strlen(order_filter) != 0)
+    {
+        _queryElement *order_filter_query = create_query_element("orderFilter", order_filter);
+        add_list_item(&params->_queries, order_filter_query);
+    }
+    if (limit >= 1 && limit <= 50)
+    {
+        char limit_str[3];
+        sprintf(limit_str, "%d", limit);
+        _queryElement *limit_query = create_query_element("limit", limit_str);
+        add_list_item(&params->_queries, limit_query);
+    }
+    if (cursor != NULL && strlen(cursor) != 0)
+    {
+        _queryElement *cursor_query = create_query_element("cursor", cursor);
+        add_list_item(&params->_queries, cursor_query);
+    }
+
+    return params;
+}
+
 _queryElement *create_query_element(char *key, char *val)
 {
     _queryElement *elem = malloc(sizeof(_queryElement));
@@ -281,6 +348,162 @@ OrderB *build_orderb(const cJSON *list_item)
     cJSON *order_size = cJSON_GetArrayItem(list_item, 1);
     if (cJSON_IsString(order_size) && (order_size->valuestring != NULL))
         order->size = strdup(order_size->valuestring);
+
+    return order;
+}
+
+// build open order from response
+OpenOrder *build_open_order(const cJSON *list_item)
+{
+    OpenOrder *order = malloc(sizeof(OpenOrder));
+    if (!order)
+        return NULL;
+
+    int size = cJSON_GetArraySize(list_item);
+    if (size != 41)
+        return NULL;
+
+    cJSON *order_id = cJSON_GetArrayItem(list_item, 0);
+    if (cJSON_IsString(order_id) && (order_id->valuestring != NULL))
+        order->order_id = strdup(order_id->valuestring);
+    cJSON *order_link_id = cJSON_GetArrayItem(list_item, 1);
+    if (cJSON_IsString(order_link_id) && (order_link_id->valuestring != NULL))
+        order->order_link_id = strdup(order_link_id->valuestring);
+    cJSON *block_trade_id = cJSON_GetArrayItem(list_item, 2);
+    if (cJSON_IsString(block_trade_id) && (block_trade_id->valuestring != NULL))
+        order->block_trade_id = strdup(block_trade_id->valuestring);
+    cJSON *symbol = cJSON_GetArrayItem(list_item, 3);
+    if (cJSON_IsString(symbol) && (symbol->valuestring != NULL))
+        order->symbol = strdup(symbol->valuestring);
+    cJSON *price = cJSON_GetArrayItem(list_item, 4);
+    if (cJSON_IsString(price) && (price->valuestring != NULL))
+        order->price = strdup(price->valuestring);
+    cJSON *qty = cJSON_GetArrayItem(list_item, 5);
+    if (cJSON_IsString(qty) && (qty->valuestring != NULL))
+        order->qty = strdup(qty->valuestring);
+    cJSON *side = cJSON_GetArrayItem(list_item, 6);
+    if (cJSON_IsString(side) && (side->valuestring != NULL))
+        order->side = strdup(side->valuestring);
+    cJSON *is_leverage = cJSON_GetArrayItem(list_item, 7);
+    if (cJSON_IsString(is_leverage) && (is_leverage->valuestring != NULL))
+        order->is_leverage = strdup(is_leverage->valuestring);
+    cJSON *position_idx = cJSON_GetArrayItem(list_item, 8);
+    if (cJSON_IsNumber(position_idx))
+        order->position_idx = position_idx->valueint;
+    cJSON *order_status = cJSON_GetArrayItem(list_item, 9);
+    if (cJSON_IsString(order_status) && (order_status->valuestring != NULL))
+        order->order_status = strdup(order_status->valuestring);
+    cJSON *cancel_type = cJSON_GetArrayItem(list_item, 10);
+    if (cJSON_IsString(cancel_type) && (cancel_type->valuestring != NULL))
+        order->cancel_type = strdup(cancel_type->valuestring);
+    cJSON *reject_reason = cJSON_GetArrayItem(list_item, 11);
+    if (cJSON_IsString(reject_reason) && (reject_reason->valuestring != NULL))
+        order->reject_reason = strdup(reject_reason->valuestring);
+    cJSON *avg_price = cJSON_GetArrayItem(list_item, 12);
+    if (cJSON_IsString(avg_price) && (avg_price->valuestring != NULL))
+        order->avg_price = strdup(avg_price->valuestring);
+    cJSON *leaves_qty = cJSON_GetArrayItem(list_item, 13);
+    if (cJSON_IsString(leaves_qty) && (leaves_qty->valuestring != NULL))
+        order->leaves_qty = strdup(leaves_qty->valuestring);
+    cJSON *leaves_value = cJSON_GetArrayItem(list_item, 14);
+    if (cJSON_IsString(leaves_value) && (leaves_value->valuestring != NULL))
+        order->leaves_value = strdup(leaves_value->valuestring);
+    cJSON *cum_exec_qty = cJSON_GetArrayItem(list_item, 15);
+    if (cJSON_IsString(cum_exec_qty) && (cum_exec_qty->valuestring != NULL))
+        order->cum_exec_qty = strdup(cum_exec_qty->valuestring);
+    cJSON *cum_exec_value = cJSON_GetArrayItem(list_item, 16);
+    if (cJSON_IsString(cum_exec_value) && (cum_exec_value->valuestring != NULL))
+        order->cum_exec_value = strdup(cum_exec_value->valuestring);
+    cJSON *cum_exec_fee = cJSON_GetArrayItem(list_item, 17);
+    if (cJSON_IsString(cum_exec_fee) && (cum_exec_fee->valuestring != NULL))
+        order->cum_exec_fee = strdup(cum_exec_fee->valuestring);
+    cJSON *time_in_force = cJSON_GetArrayItem(list_item, 18);
+    if (cJSON_IsString(time_in_force) && (time_in_force->valuestring != NULL))
+        order->time_in_force = strdup(time_in_force->valuestring);
+    cJSON *order_type = cJSON_GetArrayItem(list_item, 19);
+    if (cJSON_IsString(order_type) && (order_type->valuestring != NULL))
+        order->order_type = strdup(order_type->valuestring);
+    cJSON *stop_order_type = cJSON_GetArrayItem(list_item, 20);
+    if (cJSON_IsString(stop_order_type) && (stop_order_type->valuestring != NULL))
+        order->stop_order_type = strdup(stop_order_type->valuestring);
+    cJSON *order_lv = cJSON_GetArrayItem(list_item, 21);
+    if (cJSON_IsString(order_lv) && (order_lv->valuestring != NULL))
+        order->order_lv = strdup(order_lv->valuestring);
+    cJSON *trigger_price = cJSON_GetArrayItem(list_item, 22);
+    if (cJSON_IsString(trigger_price) && (trigger_price->valuestring != NULL))
+        order->trigger_price = strdup(trigger_price->valuestring);
+    cJSON *take_profit = cJSON_GetArrayItem(list_item, 23);
+    if (cJSON_IsString(take_profit) && (take_profit->valuestring != NULL))
+        order->take_profit = strdup(take_profit->valuestring);
+    cJSON *stop_loss = cJSON_GetArrayItem(list_item, 24);
+    if (cJSON_IsString(stop_loss) && (stop_loss->valuestring != NULL))
+        order->stop_loss = strdup(stop_loss->valuestring);
+    cJSON *tpsl_mode = cJSON_GetArrayItem(list_item, 25);
+    if (cJSON_IsString(tpsl_mode) && (tpsl_mode->valuestring != NULL))
+        order->tpsl_mode = strdup(tpsl_mode->valuestring);
+    cJSON *tp_limit_price = cJSON_GetArrayItem(list_item, 26);
+    if (cJSON_IsString(tp_limit_price) && (tp_limit_price->valuestring != NULL))
+        order->tp_limit_price = strdup(tp_limit_price->valuestring);
+    cJSON *sl_limit_price = cJSON_GetArrayItem(list_item, 27);
+    if (cJSON_IsString(sl_limit_price) && (sl_limit_price->valuestring != NULL))
+        order->sl_limit_price = strdup(sl_limit_price->valuestring);
+    cJSON *tp_trigger_by = cJSON_GetArrayItem(list_item, 28);
+    if (cJSON_IsString(tp_trigger_by) && (tp_trigger_by->valuestring != NULL))
+        order->tp_trigger_by = strdup(tp_trigger_by->valuestring);
+    cJSON *sl_trigger_by = cJSON_GetArrayItem(list_item, 29);
+    if (cJSON_IsString(sl_trigger_by) && (sl_trigger_by->valuestring != NULL))
+        order->sl_trigger_by = strdup(sl_trigger_by->valuestring);
+    cJSON *trigger_direction = cJSON_GetArrayItem(list_item, 30);
+    if (cJSON_IsNumber(trigger_direction))
+        order->trigger_direction = trigger_direction->valueint;
+    cJSON *trigger_by = cJSON_GetArrayItem(list_item, 31);
+    if (cJSON_IsString(trigger_by) && (trigger_by->valuestring != NULL))
+        order->trigger_by = strdup(trigger_by->valuestring);
+    cJSON *last_price_on_created = cJSON_GetArrayItem(list_item, 32);
+    if (cJSON_IsString(last_price_on_created) && (last_price_on_created->valuestring != NULL))
+        order->last_price_on_created = strdup(last_price_on_created->valuestring);
+    cJSON *reduce_only = cJSON_GetArrayItem(list_item, 33);
+    if (cJSON_IsBool(reduce_only))
+    {
+        if (strncmp(reduce_only->valuestring, "true", 4))
+        {
+            order->reduce_only = 1;
+        }
+        else
+        {
+            order->reduce_only = 0;
+        }
+    }
+    cJSON *close_on_trigger = cJSON_GetArrayItem(list_item, 34);
+    if (cJSON_IsBool(close_on_trigger))
+    {
+        if (strncmp(close_on_trigger->valuestring, "true", 4))
+        {
+            order->close_on_trigger = 1;
+        }
+        else
+        {
+            order->close_on_trigger = 0;
+        }
+    }
+    cJSON *place_type = cJSON_GetArrayItem(list_item, 35);
+    if (cJSON_IsString(place_type) && (place_type->valuestring != NULL))
+        order->place_type = strdup(place_type->valuestring);
+    cJSON *smp_type = cJSON_GetArrayItem(list_item, 36);
+    if (cJSON_IsString(smp_type) && (smp_type->valuestring != NULL))
+        order->smp_type = strdup(smp_type->valuestring);
+    cJSON *smp_group = cJSON_GetArrayItem(list_item, 37);
+    if (cJSON_IsNumber(smp_group))
+        order->smp_group = smp_group->valueint;
+    cJSON *smp_order_id = cJSON_GetArrayItem(list_item, 38);
+    if (cJSON_IsString(smp_order_id) && (smp_order_id->valuestring != NULL))
+        order->smp_order_id = strdup(smp_order_id->valuestring);
+    cJSON *created_time = cJSON_GetArrayItem(list_item, 39);
+    if (cJSON_IsString(created_time) && (created_time->valuestring != NULL))
+        order->created_time = strdup(created_time->valuestring);
+    cJSON *updated_time = cJSON_GetArrayItem(list_item, 40);
+    if (cJSON_IsString(updated_time) && (updated_time->valuestring != NULL))
+        order->updated_time = strdup(updated_time->valuestring);
 
     return order;
 }
@@ -454,7 +677,6 @@ char *cancel_order_request_tojson(CancelOrderRequest *cancel_order_request)
     return buff;
 }
 
-
 void free_kline(Kline *kline)
 {
     free(kline->start_time);
@@ -485,6 +707,46 @@ void free_orderb(OrderB *order)
     free(order->size);
     free(order);
     order = NULL;
+}
+
+void free_open_order(OpenOrder *open_order)
+{
+    free(open_order->order_id);
+    free(open_order->order_link_id);
+    free(open_order->block_trade_id);
+    free(open_order->symbol);
+    free(open_order->price);
+    free(open_order->qty);
+    free(open_order->side);
+    free(open_order->is_leverage);
+    free(open_order->order_status);
+    free(open_order->cancel_type);
+    free(open_order->reject_reason);
+    free(open_order->avg_price);
+    free(open_order->leaves_qty);
+    free(open_order->leaves_value);
+    free(open_order->cum_exec_qty);
+    free(open_order->cum_exec_value);
+    free(open_order->cum_exec_fee);
+    free(open_order->time_in_force);
+    free(open_order->order_type);
+    free(open_order->stop_order_type);
+    free(open_order->order_lv);
+    free(open_order->trigger_price);
+    free(open_order->take_profit);
+    free(open_order->stop_loss);
+    free(open_order->tpsl_mode);
+    free(open_order->tp_limit_price);
+    free(open_order->sl_limit_price);
+    free(open_order->tp_trigger_by);
+    free(open_order->sl_trigger_by);
+    free(open_order->trigger_by);
+    free(open_order->last_price_on_created);
+    free(open_order->place_type);
+    free(open_order->smp_type);
+    free(open_order->smp_order_id);
+    free(open_order->created_time);
+    free(open_order->updated_time);
 }
 
 void free_query_element(_queryElement *elem)

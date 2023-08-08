@@ -5,3 +5,4 @@
     1.4 Document better the methods
     1.5 [DONE] Create examples folder.
     1.6 Document how to add new methods. In case someone wants to. I doubt it :)
+    1.7 In some unintended way we are provoking this error: response code: 10016 with message: System error. Please try again later.

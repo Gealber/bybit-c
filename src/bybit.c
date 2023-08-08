@@ -21,6 +21,7 @@ const char *ORDERBOOK_PATH = "/market/orderbook";
 const char *PLACE_ORDER_PATH = "/order/create";
 const char *AMEND_ORDER_PATH = "/order/amend";
 const char *CANCEL_ORDER_PATH = "/order/cancel";
+const char *OPEN_ORDER_REALTIME_PATH = "/order/realtime";
 
 // USER AGENT
 const char *USER_AGENT = "bybit-c";
@@ -56,59 +57,17 @@ CURL *http_client()
     curl_easy_setopt(hnd, CURLOPT_FTP_SKIP_PASV_IP, 1L);
     curl_easy_setopt(hnd, CURLOPT_TCP_KEEPALIVE, 1L);
     curl_easy_setopt(hnd, CURLOPT_ACCEPT_ENCODING, "");
-    // // VERBOSE MODE
-    // curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
+    // VERBOSE MODE
+    curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
 
     return hnd;
 }
 
-// perform_get perform a GET http request storing its response
-// in the mem passed
-CURLcode perform_get(char *url, Node *queries, ResponseJSON *mem)
+struct curl_slist *auth_headers(Client *clt, char *params)
 {
-    CURL *hnd_url = curl_url();
-    CURL *hnd = http_client();
-    curl_url_set(hnd_url, CURLUPART_URL, url, 0);
-
-    // build queries
-    struct Node *cur = queries;
-    while (cur != NULL)
-    {
-        _queryElement *query = (_queryElement *)cur->val;
-        if (!query)
-            break;
-        add_query(hnd_url, query->key, query->val);
-        cur = cur->next;
-    }
-
-    // setting url
-    curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
-
-    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
-    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)mem);
-
-    // make http request asking for the tickers
-    CURLcode ret = curl_easy_perform(hnd);
-
-    // cleaning handler
-    curl_easy_cleanup(hnd);
-    hnd = NULL;
-    curl_url_cleanup(hnd_url);
-
-    return ret;
-}
-
-// perform_post perform a POST http request storing its response
-// in the mem passed. Authenticated method will need to receive the client instance.
-CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
-{
-    CURL *hnd_url = curl_url();
-    CURL *hnd = http_client();
-    curl_url_set(hnd_url, CURLUPART_URL, url, CURLU_URLENCODE);
-
     // generating signature
     int64_t ts = timestamp();
-    char *hex_signature = gen_signature(clt->api_key, clt->api_secret, ts, body);
+    char *hex_signature = gen_signature(clt->api_key, clt->api_secret, ts, params);
 
     // headers
     char api_key_header[36];
@@ -122,11 +81,88 @@ CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
 
     struct curl_slist *headers;
     headers = NULL;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, api_key_header);
     headers = curl_slist_append(headers, ts_header);
     headers = curl_slist_append(headers, sign_header);
     headers = curl_slist_append(headers, recv_window);
+
+    free(hex_signature);
+    return headers;
+}
+
+// perform_get perform a GET http request storing its response
+// in the mem passed
+CURLcode perform_get(Client *clt, char *url, Node *queries, ResponseJSON *mem)
+{
+    CURL *hnd_url = curl_url();
+    CURL *hnd = http_client();
+    curl_url_set(hnd_url, CURLUPART_URL, url, 0);
+
+    // build queries
+    size_t params_size = 1;
+    int cur_pos = 0;
+    char *params = calloc(1, sizeof(char));
+    params[0] = '\0';
+    struct Node *cur = queries;
+    while (cur != NULL)
+    {
+        _queryElement *query = (_queryElement *)cur->val;
+        if (!query)
+            break;
+        add_query(hnd_url, query->key, query->val);
+        cur = cur->next;
+        params_size += strlen(query->key) + strlen(query->val) + 2; // 2 for = and for &
+        params = realloc(params, params_size*sizeof(char));
+        sprintf(&params[cur_pos], "%s=%s&", query->key, query->val);
+        cur_pos = params_size-1;
+    }
+
+    if (params)
+        params[strlen(params)-1] = '\0';
+
+    // setting auth headers in case is needed
+    struct curl_slist *headers;
+    headers = NULL;
+    if (clt) {
+        headers = auth_headers(clt, params);
+        curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
+    }
+
+    // setting url
+    curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
+    curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, write_json);
+    curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)mem);
+
+    // make http request asking for the tickers
+    CURLcode ret = curl_easy_perform(hnd);
+
+    // cleaning handler
+    curl_easy_cleanup(hnd);
+    hnd = NULL;
+    // cleaning list of headers
+    if (headers) {
+        curl_slist_free_all(headers);
+        headers = NULL;
+    }
+    // clearing url
+    curl_url_cleanup(hnd_url);
+    free(params);
+
+    return ret;
+}
+
+// perform_post perform a POST http request storing its response
+// in the mem passed. Authenticated method will need to receive the client instance.
+CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
+{
+    CURL *hnd_url = curl_url();
+    CURL *hnd = http_client();
+    curl_url_set(hnd_url, CURLUPART_URL, url, CURLU_URLENCODE);
+
+    // auth headers
+    struct curl_slist *headers;
+    headers = auth_headers(clt, body);
+    headers = curl_slist_append(headers, "Content-Type: application/json");
 
     // setting url
     curl_easy_setopt(hnd, CURLOPT_CURLU, hnd_url);
@@ -152,7 +188,6 @@ CURLcode perform_post(Client *clt, char *url, char *body, ResponseJSON *mem)
     curl_url_cleanup(hnd_url);
     hnd_url = NULL;
     // we need to free signature as well
-    free(hex_signature);
 
     return ret;
 }
@@ -174,7 +209,7 @@ APIResponse *get_ticker(TickersQueryParams *query)
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    CURLcode ret = perform_get(url, query->_queries, &mem);
+    CURLcode ret = perform_get(NULL, url, query->_queries, &mem);
     if (ret != CURLE_OK)
         return NULL;
 
@@ -194,7 +229,7 @@ APIResponse *get_time_server()
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    CURLcode ret = perform_get(url, NULL, &mem);
+    CURLcode ret = perform_get(NULL, url, NULL, &mem);
     if (ret != CURLE_OK)
         return NULL;
 
@@ -218,7 +253,7 @@ APIResponse *get_kline(KlineQueryParams *query)
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    CURLcode ret = perform_get(url, query->_queries, &mem);
+    CURLcode ret = perform_get(NULL, url, query->_queries, &mem);
     if (ret != CURLE_OK)
         return NULL;
 
@@ -237,7 +272,7 @@ APIResponse *get_mark_price_kline(KlineQueryParams *query)
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    CURLcode ret = perform_get(url, query->_queries, &mem);
+    CURLcode ret = perform_get(NULL, url, query->_queries, &mem);
     if (ret != CURLE_OK)
         return NULL;
 
@@ -257,11 +292,30 @@ APIResponse *get_order_book(OrderBookQuery *query)
     // setting memory to store response
     ResponseJSON mem = {.chunk = malloc(0), .size = 0};
 
-    CURLcode ret = perform_get(url, query->_queries, &mem);
+    CURLcode ret = perform_get(NULL, url, query->_queries, &mem);
     if (ret != CURLE_OK)
         return NULL;
 
     APIResponse *resp = parse_api_response(mem.chunk, parse_order_book_response_cb);
+
+    free(mem.chunk);
+
+    return resp;
+}
+
+APIResponse *get_open_orders(Client *clt, OpenOrdersQuery *query)
+{
+    char url[128];
+    sprintf(url, "%s%s", DOMAIN_TESTNET, OPEN_ORDER_REALTIME_PATH);
+
+    // setting memory to store response
+    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
+
+    CURLcode ret = perform_get(clt, url, query->_queries, &mem);
+    if (ret != CURLE_OK)
+        return NULL;
+
+    APIResponse *resp = parse_api_response(mem.chunk, parse_open_orders_response_cb);
 
     free(mem.chunk);
 
@@ -345,7 +399,6 @@ APIResponse *post_cancel_order(Client *clt, CancelOrderRequest *cancel_order_req
 
     return resp;
 }
-
 
 /* UTILS */
 char *gen_signature(const char *api_key, const char *api_secret, int64_t ts, char *params)

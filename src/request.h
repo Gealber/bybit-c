@@ -136,17 +136,79 @@ typedef struct
     char *order_filter;
 } CancelOrderRequest;
 
+typedef struct
+{
+    char *category;
+    char *symbol;
+    char *settle_coin;
+    char *order_id;
+    char *order_link_id;
+    int open_only;
+    char *order_filter;
+    int limit;
+    char *cursor;
+    struct Node *_queries;
+} OpenOrdersQuery;
+
+typedef struct
+{
+    char *order_id;
+    char *order_link_id;
+    char *block_trade_id;
+    char *symbol;
+    char *price;
+    char *qty;
+    char *side;
+    char *is_leverage;
+    int position_idx;
+    char *order_status;
+    char *cancel_type;
+    char *reject_reason;
+    char *avg_price;
+    char *leaves_qty;
+    char *leaves_value;
+    char *cum_exec_qty;
+    char *cum_exec_value;
+    char *cum_exec_fee;
+    char *time_in_force;
+    char *order_type;
+    char *stop_order_type;
+    char *order_lv;
+    char *trigger_price;
+    char *take_profit;
+    char *stop_loss;
+    char *tpsl_mode;
+    char *tp_limit_price;
+    char *sl_limit_price;
+    char *tp_trigger_by;
+    char *sl_trigger_by;
+    int trigger_direction;
+    char *trigger_by;
+    char *last_price_on_created;
+    bool reduce_only;
+    bool close_on_trigger;
+    char *place_type;
+    char *smp_type;
+    int smp_group;
+    char *smp_order_id;
+    char *created_time;
+    char *updated_time;
+} OpenOrder;
+
+
 // building structs from response
 Ticker *build_ticker(const cJSON *list_item);
 void free_ticker(Ticker *ticker);
 Kline *build_kline(const cJSON *list_item);
 Kline *build_price_kline(const cJSON *list_item);
 OrderB *build_orderb(const cJSON *list_item);
+OpenOrder *build_open_order(const cJSON *list_item);
 
 // query structs
 TickersQueryParams *build_ticker_query(char *category, char *symbol, char *base_coin, char *exp_date);
 KlineQueryParams *build_kline_query(char *category, char *symbol, char *interval, char *start, char *end, char *limit);
 OrderBookQuery *build_order_book_query(char *category, char *symbol, char *limit);
+OpenOrdersQuery *build_open_orders_query(char *category, char *symbol, char *settle_coin, char *order_id, char *order_link_id, int open_only, char *order_filter, int limit, char *cursor);
 _queryElement *create_query_element(char *key, char *val);
 
 // struct to json
@@ -162,6 +224,7 @@ char *cancel_order_request_tojson(CancelOrderRequest *cancel_order_request);
 void free_kline(Kline *kline);
 void free_price_kline(Kline *kline);
 void free_orderb(OrderB *order);
+void free_open_order(OpenOrder *open_order);
 // realeasing memory for queries
 void free_query_element(_queryElement *elem);
 void free_query_element_cb(void *elem);

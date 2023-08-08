@@ -59,7 +59,8 @@ void *parse_ticker_response_cb(const cJSON *json)
 TickerResponse *parse_ticker_response(const cJSON *json)
 {
     TickerResponse *resp = malloc(sizeof(TickerResponse));
-    if (!resp) return NULL;
+    if (!resp)
+        return NULL;
 
     resp->list = NULL;
     resp->category = 0;
@@ -219,7 +220,6 @@ OrderBookResponse *parse_order_book_response(const cJSON *json)
     const cJSON *b = NULL;
     const cJSON *b_item = NULL;
 
-
     // cursor of the list
     result = cJSON_GetObjectItemCaseSensitive(json, "result");
     if (cJSON_IsObject(result))
@@ -260,7 +260,8 @@ void *parse_order_response_cb(const cJSON *json)
 OrderResponse *parse_order_response(const cJSON *json)
 {
     OrderResponse *resp = malloc(sizeof(OrderResponse));
-    if (!resp) return NULL;
+    if (!resp)
+        return NULL;
     resp->order_id = NULL;
     resp->order_link_id = NULL;
 
@@ -281,10 +282,54 @@ OrderResponse *parse_order_response(const cJSON *json)
     return resp;
 }
 
+void *parse_open_orders_response_cb(const cJSON *json)
+{
+    return parse_open_orders_response(json);
+}
+
+OpenOrdersResponse *parse_open_orders_response(const cJSON *json)
+{
+    OpenOrdersResponse *resp = malloc(sizeof(OpenOrdersResponse));
+    if (!resp)
+        return NULL;
+    // initialise response
+    resp->category = NULL;
+    resp->next_page_cursor = NULL;
+    resp->list = NULL;
+
+    const cJSON *result = NULL;
+    const cJSON *list = NULL;
+    const cJSON *list_item = NULL;
+
+    // cursor of the list
+    result = cJSON_GetObjectItemCaseSensitive(json, "result");
+    if (cJSON_IsObject(result))
+    {
+        char *category_str = extract_string_field(result, "category");
+        if (strlen(category_str) != 0)
+            resp->category = strdup(category_str);
+        char *next_page_cursor = extract_string_field(result, "nextPageCursor");
+        if (strlen(next_page_cursor) != 0)
+            resp->next_page_cursor = strdup(next_page_cursor);
+
+        list = cJSON_GetObjectItemCaseSensitive(result, "list");
+        cJSON_ArrayForEach(list_item, list)
+        {
+            OpenOrder *open_order = build_open_order(list_item);
+            add_list_item(&resp->list, open_order);
+        }
+    }
+
+    return resp;
+}
+
 void free_api_response(APIResponse *api_resp)
 {
-	if (api_resp->ret_msg) free(api_resp->ret_msg);
-	if (api_resp->result) free(api_resp->result);
-	if (api_resp) free(api_resp);
+    if (api_resp->ret_msg)
+        free(api_resp->ret_msg);
+    if (api_resp->result)
+        free(api_resp->result);
+    if (api_resp)
+        free(api_resp);
     api_resp = NULL;
 }
