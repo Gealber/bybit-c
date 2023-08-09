@@ -352,6 +352,28 @@ OrderB *build_orderb(const cJSON *list_item)
     return order;
 }
 
+// build order from response
+CancelledOrder *build_cancelled_order(const cJSON *list_item)
+{
+    CancelledOrder *order = malloc(sizeof(CancelledOrder));
+    if (!order)
+        return NULL;
+
+    int size = cJSON_GetArraySize(list_item);
+    if (size != 2)
+        return NULL;
+
+    cJSON *order_id = cJSON_GetArrayItem(list_item, 0);
+    if (cJSON_IsString(order_id) && (order_id->valuestring != NULL))
+        order->order_id = strdup(order_id->valuestring);
+
+    cJSON *order_link_id = cJSON_GetArrayItem(list_item, 1);
+    if (cJSON_IsString(order_link_id) && (order_link_id->valuestring != NULL))
+        order->order_link_id = strdup(order_link_id->valuestring);
+
+    return order;
+}
+
 // build open order from response
 OpenOrder *build_open_order(const cJSON *list_item)
 {
@@ -539,6 +561,21 @@ OrderRequest *init_order_request()
     return order;
 }
 
+CancelAllOrders *init_cancel_all_orders_request()
+{
+    CancelAllOrders *request = calloc(1, sizeof(CancelAllOrders));
+    if (!request)
+        return NULL;
+
+    request->category = NULL;
+    request->symbol = NULL;
+    request->base_coin = NULL;
+    request->settle_coin = NULL;
+    request->order_filter = NULL;
+
+    return request;
+}
+
 // order_request_tojson returns the json string of the struct
 char *order_request_tojson(OrderRequest *order_request)
 {
@@ -677,6 +714,28 @@ char *cancel_order_request_tojson(CancelOrderRequest *cancel_order_request)
     return buff;
 }
 
+char *cancel_all_orders_request_tojson(CancelAllOrders *cancel_all_orders_request)
+{
+    char *buff = NULL;
+
+    cJSON *json = cJSON_CreateObject();
+    if (!json)
+        return NULL;
+
+    add_string_field(json, "category", cancel_all_orders_request->category);
+    add_string_field(json, "symbol", cancel_all_orders_request->symbol);
+    add_string_field(json, "baseCoin", cancel_all_orders_request->base_coin);
+    add_string_field(json, "settleCoin", cancel_all_orders_request->settle_coin);
+    add_string_field(json, "orderFilter", cancel_all_orders_request->order_filter);
+
+    buff = cJSON_Print(json);
+    clean_string(buff);
+
+    cJSON_Delete(json);
+
+    return buff;
+}
+
 void free_kline(Kline *kline)
 {
     free(kline->start_time);
@@ -783,6 +842,14 @@ void free_ticker(Ticker *ticker)
     free(ticker->usd_index_price);
     free(ticker);
     ticker = NULL;
+}
+
+void free_cancelled_order(CancelledOrder *cancelled_order)
+{
+    free(cancelled_order->order_id);
+    free(cancelled_order->order_link_id);
+    free(cancelled_order);
+    cancelled_order = NULL;
 }
 
 // free_order_request free memory for order requests

@@ -195,6 +195,20 @@ typedef struct
     char *updated_time;
 } OpenOrder;
 
+typedef struct 
+{
+    char *category;
+    char *symbol;
+    char *base_coin;
+    char *settle_coin;
+    char *order_filter;
+} CancelAllOrders;
+
+typedef struct
+{
+    char *order_id;
+    char *order_link_id;
+} CancelledOrder;
 
 // building structs from response
 Ticker *build_ticker(const cJSON *list_item);
@@ -203,6 +217,7 @@ Kline *build_kline(const cJSON *list_item);
 Kline *build_price_kline(const cJSON *list_item);
 OrderB *build_orderb(const cJSON *list_item);
 OpenOrder *build_open_order(const cJSON *list_item);
+CancelledOrder *build_cancelled_order(const cJSON *list_item);
 
 // query structs
 TickersQueryParams *build_ticker_query(char *category, char *symbol, char *base_coin, char *exp_date);
@@ -219,6 +234,8 @@ AmendOrderRequest *init_amend_order_request();
 char *amend_order_request_tojson(AmendOrderRequest *amend_order_request);
 CancelOrderRequest *init_cancel_order_request();
 char *cancel_order_request_tojson(CancelOrderRequest *cancel_order_request);
+CancelAllOrders *init_cancel_all_orders_request();
+char *cancel_all_orders_request_tojson(CancelAllOrders *cancel_all_orders_request);
 
 // methods for releasing memory
 void free_kline(Kline *kline);
@@ -230,5 +247,6 @@ void free_query_element(_queryElement *elem);
 void free_query_element_cb(void *elem);
 // realeasing body json
 void free_order_request(OrderRequest *order_request);
+void free_cancelled_order(CancelledOrder *cancelled_order);
 
 #endif

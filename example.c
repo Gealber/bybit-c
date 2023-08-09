@@ -5,6 +5,7 @@
 #include "src/request.h"
 #include "src/response.h"
 
+void place_cancel_all_orders();
 void place_cancel_order();
 void amend_order();
 void place_order();
@@ -31,8 +32,77 @@ int main(int argc, char *argv[])
 	// retrieve_kline();
 	// retrieve_price_kline();
 	// retrieve_order_book();
-	retrieve_open_orders();
+	// retrieve_open_orders();
+	place_cancel_all_orders();
 	return 0;
+}
+
+void place_cancel_all_orders()
+{
+	// Client *clt = new("<API_KEY>", "<API_SECRET>");
+	Client *clt = new("wLRb7YfUhzBYjcs8gY", "kKve5Z13n8t16tV7dooSKfs9robjXX2H6eQD");
+	if (!clt)
+		return ;
+
+	// allocate memory and initialize order request
+	CancelAllOrders *cancel_all_orders_request = init_cancel_all_orders_request();
+	if (!cancel_all_orders_request)
+		return ;
+
+	cancel_all_orders_request->category = "spot";
+	cancel_all_orders_request->symbol = "BTCUSDT";
+	cancel_all_orders_request->base_coin = "BTC";
+	
+	APIResponse *api_resp = post_cancel_all_orders(clt, cancel_all_orders_request);
+	if (!api_resp)
+		goto end;
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+	if (!api_resp->result) {
+		printf("RESULT IS NULL\n");
+		goto end;
+	}
+
+	CancelAllOrdersResponse *resp = (CancelAllOrdersResponse *)api_resp->result;
+	if (!resp)
+		goto end;
+
+	struct Node *cur = resp->list;
+	if (cur == NULL)
+		goto end;
+
+	int i = 0;
+	while (cur != NULL)
+	{
+		CancelledOrder *order = (CancelledOrder *)cur->val;
+		printf("-------------------> %d\n", i);
+		printf("order_id: %s\n", order->order_id);
+		printf("order_link_id: %s\n", order->order_link_id);
+		cur = cur->next;
+		i++;
+	}
+
+	Node *tmp = NULL;
+	cur = resp->list;
+	while (cur != NULL)
+	{
+		free_cancelled_order(cur->val);
+		tmp = cur;
+		cur = cur->next;
+		free(tmp);
+	}
+
+end:
+	if (cancel_all_orders_request) free(cancel_all_orders_request);
+	if (api_resp) free_api_response(api_resp);
+	if (clt) free(clt);
+
+	return ;
 }
 
 void retrieve_open_orders()

@@ -282,6 +282,37 @@ OrderResponse *parse_order_response(const cJSON *json)
     return resp;
 }
 
+void *parse_cancel_all_orders_response_cb(const cJSON *json)
+{
+    return parse_cancel_all_orders_response(json);
+}
+
+CancelAllOrdersResponse *parse_cancel_all_orders_response(const cJSON *json)
+{
+    CancelAllOrdersResponse *resp = malloc(sizeof(CancelAllOrdersResponse));
+    if (!resp)
+        return NULL;
+    resp->list = NULL;
+
+    const cJSON *result = NULL;
+    const cJSON *list = NULL;
+    const cJSON *list_item = NULL;
+
+    // cursor of the list
+    result = cJSON_GetObjectItemCaseSensitive(json, "result");
+    if (cJSON_IsObject(result))
+    {
+        list = cJSON_GetObjectItemCaseSensitive(result, "list");
+        cJSON_ArrayForEach(list_item, list)
+        {
+            CancelledOrder *cancelled_order = build_cancelled_order(list_item);
+            add_list_item(&resp->list, cancelled_order);
+        }
+    }
+
+    return resp;
+}
+
 void *parse_open_orders_response_cb(const cJSON *json)
 {
     return parse_open_orders_response(json);

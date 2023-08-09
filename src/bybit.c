@@ -21,12 +21,13 @@ const char *ORDERBOOK_PATH = "/market/orderbook";
 const char *PLACE_ORDER_PATH = "/order/create";
 const char *AMEND_ORDER_PATH = "/order/amend";
 const char *CANCEL_ORDER_PATH = "/order/cancel";
+const char *CANCEL_ALL_ORDER_PATH = "/order/cancel-all";
 const char *OPEN_ORDER_REALTIME_PATH = "/order/realtime";
 
 // USER AGENT
 const char *USER_AGENT = "bybit-c";
 
-const int DEFAULT_RECV_WINDOW = 7000;
+const int DEFAULT_RECV_WINDOW = 6000;
 
 // New creates a new Client instance
 // which will contain information about API KEY and API SECRET
@@ -57,8 +58,8 @@ CURL *http_client()
     curl_easy_setopt(hnd, CURLOPT_FTP_SKIP_PASV_IP, 1L);
     curl_easy_setopt(hnd, CURLOPT_TCP_KEEPALIVE, 1L);
     curl_easy_setopt(hnd, CURLOPT_ACCEPT_ENCODING, "");
-    // VERBOSE MODE
-    curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
+    // // VERBOSE MODE
+    // curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1L);
 
     return hnd;
 }
@@ -392,6 +393,32 @@ APIResponse *post_cancel_order(Client *clt, CancelOrderRequest *cancel_order_req
     APIResponse *resp = NULL;
     if (mem.size != 0)
         resp = parse_api_response(mem.chunk, parse_order_response_cb);
+
+    if (mem.chunk)
+        free(mem.chunk);
+    free(body);
+
+    return resp;
+}
+
+// cancel_all_orders
+APIResponse *post_cancel_all_orders(Client *clt, CancelAllOrders *cancel_all_orders_request)
+{
+    char url[50];
+    sprintf(url, "%s%s", DOMAIN_TESTNET, CANCEL_ALL_ORDER_PATH);
+
+    // setting memory to store response
+    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
+
+    char *body = cancel_all_orders_request_tojson(cancel_all_orders_request);
+
+    CURLcode ret = perform_post(clt, url, body, &mem);
+    if (ret != CURLE_OK)
+        return NULL;
+
+    APIResponse *resp = NULL;
+    if (mem.size != 0)
+        resp = parse_api_response(mem.chunk, parse_cancel_all_orders_response_cb);
 
     if (mem.chunk)
         free(mem.chunk);
