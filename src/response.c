@@ -22,8 +22,10 @@ APIResponse *parse_api_response(char *text, void *result_parsing_cb(const cJSON 
 
     const cJSON *ret_code = NULL;
 
-    if (!text || strlen(text) == 0)
+    if (!text || strlen(text) == 0) {
+        free(resp);
         return NULL;
+    }
     cJSON *json = cJSON_Parse(text);
     if (!json)
     {

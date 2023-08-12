@@ -97,6 +97,9 @@ struct curl_slist *auth_headers(Client *clt, char *params)
 // in the mem passed
 CURLcode perform_get(Client *clt, char *url, Node *queries, ResponseJSON *mem)
 {
+    CURLcode ret = CURLE_OK;
+    struct curl_slist *headers;
+    headers = NULL;
     CURL *hnd_url = curl_url();
     CURL *hnd = http_client();
     curl_url_set(hnd_url, CURLUPART_URL, url, 0);
@@ -115,18 +118,25 @@ CURLcode perform_get(Client *clt, char *url, Node *queries, ResponseJSON *mem)
         add_query(hnd_url, query->key, query->val);
         cur = cur->next;
         params_size += strlen(query->key) + strlen(query->val) + 2; // 2 for = and for &
-        params = realloc(params, params_size*sizeof(char));
+        void *tmp = realloc(params, params_size * sizeof(char));
+        if (params)
+        {
+            params = tmp;
+        }
+        else
+        {
+            goto end;
+        }
         sprintf(&params[cur_pos], "%s=%s&", query->key, query->val);
-        cur_pos = params_size-1;
+        cur_pos = params_size - 1;
     }
 
     if (params)
-        params[strlen(params)-1] = '\0';
+        params[strlen(params) - 1] = '\0';
 
     // setting auth headers in case is needed
-    struct curl_slist *headers;
-    headers = NULL;
-    if (clt) {
+    if (clt)
+    {
         headers = auth_headers(clt, params);
         curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, headers);
     }
@@ -137,19 +147,22 @@ CURLcode perform_get(Client *clt, char *url, Node *queries, ResponseJSON *mem)
     curl_easy_setopt(hnd, CURLOPT_WRITEDATA, (void *)mem);
 
     // make http request asking for the tickers
-    CURLcode ret = curl_easy_perform(hnd);
+    ret = curl_easy_perform(hnd);
 
+end:
     // cleaning handler
     curl_easy_cleanup(hnd);
     hnd = NULL;
     // cleaning list of headers
-    if (headers) {
+    if (headers)
+    {
         curl_slist_free_all(headers);
         headers = NULL;
     }
     // clearing url
     curl_url_cleanup(hnd_url);
-    free(params);
+    if (params)
+        free(params);
 
     return ret;
 }
@@ -203,7 +216,7 @@ APIResponse *get_ticker(TickersQueryParams *query)
         return NULL;
 
     // category it's a required parameter
-    if (query->category == NULL && (strlen(query->category) == 0))
+    if (query->category == NULL || (strlen(query->category) == 0))
         return NULL;
 
     char url[128];
@@ -344,7 +357,6 @@ APIResponse *get_order_history(Client *clt, OrdersHistoryQuery *query)
     return resp;
 }
 
-
 // post_order place an order in the exchange
 APIResponse *post_order(Client *clt, OrderRequest *order_request)
 {
@@ -371,7 +383,7 @@ APIResponse *post_order(Client *clt, OrderRequest *order_request)
     return resp;
 }
 
-// amend_order 
+// amend_order
 APIResponse *post_amend_order(Client *clt, AmendOrderRequest *amend_order_request)
 {
     char url[46];
@@ -397,7 +409,7 @@ APIResponse *post_amend_order(Client *clt, AmendOrderRequest *amend_order_reques
     return resp;
 }
 
-// cancel_order 
+// cancel_order
 APIResponse *post_cancel_order(Client *clt, CancelOrderRequest *cancel_order_request)
 {
     char url[46];

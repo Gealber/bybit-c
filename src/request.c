@@ -343,7 +343,10 @@ Kline *build_kline(const cJSON *list_item)
 
     int size = cJSON_GetArraySize(list_item);
     if (size != 7)
+    {
+        free(kline);
         return NULL;
+    }
 
     cJSON *start_time = cJSON_GetArrayItem(list_item, 0);
     if (cJSON_IsString(start_time) && (start_time->valuestring != NULL))
@@ -385,7 +388,10 @@ Kline *build_price_kline(const cJSON *list_item)
 
     int size = cJSON_GetArraySize(list_item);
     if (size != 5)
+    {
+        free(kline);
         return NULL;
+    }
 
     cJSON *start_time = cJSON_GetArrayItem(list_item, 0);
     if (cJSON_IsString(start_time) && (start_time->valuestring != NULL))
@@ -419,7 +425,10 @@ OrderB *build_orderb(const cJSON *list_item)
 
     int size = cJSON_GetArraySize(list_item);
     if (size != 2)
+    {
+        free(order);
         return NULL;
+    }
 
     cJSON *price = cJSON_GetArrayItem(list_item, 0);
     if (cJSON_IsString(price) && (price->valuestring != NULL))
@@ -441,7 +450,10 @@ CancelledOrder *build_cancelled_order(const cJSON *list_item)
 
     int size = cJSON_GetArraySize(list_item);
     if (size != 2)
+    {
+        free(order);
         return NULL;
+    }
 
     cJSON *order_id = cJSON_GetArrayItem(list_item, 0);
     if (cJSON_IsString(order_id) && (order_id->valuestring != NULL))
@@ -463,7 +475,10 @@ OpenOrder *build_open_order_arr(const cJSON *list_item)
 
     int size = cJSON_GetArraySize(list_item);
     if (size != 41)
+    {
+        free(order);
         return NULL;
+    }
 
     cJSON *order_id = cJSON_GetArrayItem(list_item, 0);
     if (cJSON_IsString(order_id) && (order_id->valuestring != NULL))
@@ -617,7 +632,7 @@ OpenOrder *build_open_order_obj(const cJSON *list_item)
     if (!order)
         return NULL;
 
-    char *order_id= extract_string_field(list_item, "orderId");
+    char *order_id = extract_string_field(list_item, "orderId");
     order->order_id = strdup(order_id);
     char *order_link_id = extract_string_field(list_item, "orderLinkId");
     order->order_link_id = strdup(order_link_id);
