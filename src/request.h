@@ -210,13 +210,32 @@ typedef struct
     char *order_link_id;
 } CancelledOrder;
 
+typedef struct
+{
+    char *category;
+    char *symbol;
+    char *base_coin;
+    char *settle_coin;
+    char *order_id;
+    char *order_link_id;
+    char *order_filter;
+    char *order_status;
+    char *start_time;
+    char *end_time;
+    char *limit;
+    char *cursor;
+    struct Node *_queries;
+} OrdersHistoryQuery;
+
+
 // building structs from response
 Ticker *build_ticker(const cJSON *list_item);
 void free_ticker(Ticker *ticker);
 Kline *build_kline(const cJSON *list_item);
 Kline *build_price_kline(const cJSON *list_item);
 OrderB *build_orderb(const cJSON *list_item);
-OpenOrder *build_open_order(const cJSON *list_item);
+OpenOrder *build_open_order_arr(const cJSON *list_item);
+OpenOrder *build_open_order_obj(const cJSON *list_item);
 CancelledOrder *build_cancelled_order(const cJSON *list_item);
 
 // query structs
@@ -224,6 +243,7 @@ TickersQueryParams *build_ticker_query(char *category, char *symbol, char *base_
 KlineQueryParams *build_kline_query(char *category, char *symbol, char *interval, char *start, char *end, char *limit);
 OrderBookQuery *build_order_book_query(char *category, char *symbol, char *limit);
 OpenOrdersQuery *build_open_orders_query(char *category, char *symbol, char *settle_coin, char *order_id, char *order_link_id, int open_only, char *order_filter, int limit, char *cursor);
+OrdersHistoryQuery *build_orders_history_query(char *category, char *symbol, char *settle_coin, char *order_id, char *order_link_id, char *order_filter, char *order_status, char *start_time, char *end_time, char *limit, char *cursor);
 _queryElement *create_query_element(char *key, char *val);
 
 // struct to json

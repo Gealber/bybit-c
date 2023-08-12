@@ -346,7 +346,44 @@ OpenOrdersResponse *parse_open_orders_response(const cJSON *json)
         list = cJSON_GetObjectItemCaseSensitive(result, "list");
         cJSON_ArrayForEach(list_item, list)
         {
-            OpenOrder *open_order = build_open_order(list_item);
+            OpenOrder *open_order = build_open_order_arr(list_item);
+            add_list_item(&resp->list, open_order);
+        }
+    }
+
+    return resp;
+}
+
+void *parse_order_history_response_cb(const cJSON *json)
+{
+    return parse_order_history_response(json);
+}
+
+OrderHistoryResponse *parse_order_history_response(const cJSON *json)
+{
+    OrderHistoryResponse *resp = malloc(sizeof(OrderHistoryResponse));
+    if (!resp)
+        return NULL;
+    // initialise response
+    resp->category = NULL;
+    resp->list = NULL;
+
+    const cJSON *result = NULL;
+    const cJSON *list = NULL;
+    const cJSON *list_item = NULL;
+
+    // cursor of the list
+    result = cJSON_GetObjectItemCaseSensitive(json, "result");
+    if (cJSON_IsObject(result))
+    {
+        char *category_str = extract_string_field(result, "category");
+        if (strlen(category_str) != 0)
+            resp->category = strdup(category_str);
+
+        list = cJSON_GetObjectItemCaseSensitive(result, "list");
+        cJSON_ArrayForEach(list_item, list)
+        {
+            OpenOrder *open_order = build_open_order_obj(list_item);
             add_list_item(&resp->list, open_order);
         }
     }

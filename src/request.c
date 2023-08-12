@@ -245,6 +245,86 @@ OpenOrdersQuery *build_open_orders_query(char *category, char *symbol, char *set
     return params;
 }
 
+OrdersHistoryQuery *build_orders_history_query(char *category, char *symbol, char *settle_coin, char *order_id, char *order_link_id, char *order_filter, char *order_status, char *start_time, char *end_time, char *limit, char *cursor)
+{
+    OrdersHistoryQuery *params = malloc(sizeof(OrdersHistoryQuery));
+    if (!params)
+        return NULL;
+
+    params->category = category;
+    params->symbol = symbol;
+    params->settle_coin = settle_coin;
+    params->order_id = order_id;
+    params->order_link_id = order_link_id;
+    params->order_filter = order_filter;
+    params->order_status = order_status;
+    params->start_time = start_time;
+    params->end_time = end_time;
+    params->limit = limit;
+    params->cursor = cursor;
+
+    params->_queries = (Node *)calloc(1, sizeof(Node));
+
+    // build _queries list
+    if (category != NULL && strlen(category) != 0)
+    {
+        _queryElement *category_query = create_query_element("category", category);
+        add_list_item(&params->_queries, category_query);
+    }
+    if (symbol != NULL && strlen(symbol) != 0)
+    {
+        _queryElement *symbol_query = create_query_element("symbol", symbol);
+        add_list_item(&params->_queries, symbol_query);
+    }
+    if (settle_coin != NULL && strlen(settle_coin) != 0)
+    {
+        _queryElement *settle_coin_query = create_query_element("settleCoin", settle_coin);
+        add_list_item(&params->_queries, settle_coin_query);
+    }
+    if (order_id != NULL && strlen(order_id) != 0)
+    {
+        _queryElement *order_id_query = create_query_element("orderId", order_id);
+        add_list_item(&params->_queries, order_id_query);
+    }
+    if (order_link_id != NULL && strlen(order_link_id) != 0)
+    {
+        _queryElement *order_link_id_query = create_query_element("orderLinkId", order_link_id);
+        add_list_item(&params->_queries, order_link_id_query);
+    }
+    if (order_filter != NULL && strlen(order_filter) != 0)
+    {
+        _queryElement *order_filter_query = create_query_element("orderFilter", order_filter);
+        add_list_item(&params->_queries, order_filter_query);
+    }
+    if (order_status != NULL && strlen(order_status) != 0)
+    {
+        _queryElement *order_status_query = create_query_element("orderStatus", order_status);
+        add_list_item(&params->_queries, order_status_query);
+    }
+    if (start_time != NULL && strlen(start_time) != 0)
+    {
+        _queryElement *start_time_query = create_query_element("startTime", start_time);
+        add_list_item(&params->_queries, start_time_query);
+    }
+    if (end_time != NULL && strlen(end_time) != 0)
+    {
+        _queryElement *end_time_query = create_query_element("endTime", end_time);
+        add_list_item(&params->_queries, end_time_query);
+    }
+    if (limit != NULL && strlen(limit) != 0)
+    {
+        _queryElement *limit_query = create_query_element("limit", limit);
+        add_list_item(&params->_queries, limit_query);
+    }
+    if (cursor != NULL && strlen(cursor) != 0)
+    {
+        _queryElement *cursor_query = create_query_element("cursor", cursor);
+        add_list_item(&params->_queries, cursor_query);
+    }
+
+    return params;
+}
+
 _queryElement *create_query_element(char *key, char *val)
 {
     _queryElement *elem = malloc(sizeof(_queryElement));
@@ -375,7 +455,7 @@ CancelledOrder *build_cancelled_order(const cJSON *list_item)
 }
 
 // build open order from response
-OpenOrder *build_open_order(const cJSON *list_item)
+OpenOrder *build_open_order_arr(const cJSON *list_item)
 {
     OpenOrder *order = malloc(sizeof(OpenOrder));
     if (!order)
@@ -526,6 +606,99 @@ OpenOrder *build_open_order(const cJSON *list_item)
     cJSON *updated_time = cJSON_GetArrayItem(list_item, 40);
     if (cJSON_IsString(updated_time) && (updated_time->valuestring != NULL))
         order->updated_time = strdup(updated_time->valuestring);
+
+    return order;
+}
+
+// build open order from response
+OpenOrder *build_open_order_obj(const cJSON *list_item)
+{
+    OpenOrder *order = malloc(sizeof(OpenOrder));
+    if (!order)
+        return NULL;
+
+    char *order_id= extract_string_field(list_item, "orderId");
+    order->order_id = strdup(order_id);
+    char *order_link_id = extract_string_field(list_item, "orderLinkId");
+    order->order_link_id = strdup(order_link_id);
+    char *block_trade_id = extract_string_field(list_item, "blockTradeId");
+    order->block_trade_id = strdup(block_trade_id);
+    char *symbol = extract_string_field(list_item, "symbol");
+    order->symbol = strdup(symbol);
+    char *price = extract_string_field(list_item, "price");
+    order->price = strdup(price);
+    char *qty = extract_string_field(list_item, "qty");
+    order->qty = strdup(qty);
+    char *side = extract_string_field(list_item, "side");
+    order->side = strdup(side);
+    char *is_leverage = extract_string_field(list_item, "isLeverage");
+    order->is_leverage = strdup(is_leverage);
+    int position_idx = extract_int_field(list_item, "positionIdx");
+    order->position_idx = position_idx;
+    char *order_status = extract_string_field(list_item, "orderStatus");
+    order->order_status = strdup(order_status);
+    char *cancel_type = extract_string_field(list_item, "cancelType");
+    order->cancel_type = strdup(cancel_type);
+    char *reject_reason = extract_string_field(list_item, "rejectReason");
+    order->reject_reason = strdup(reject_reason);
+    char *avg_price = extract_string_field(list_item, "avgPrice");
+    order->avg_price = strdup(avg_price);
+    char *leaves_qty = extract_string_field(list_item, "leavesQty");
+    order->leaves_qty = strdup(leaves_qty);
+    char *leaves_value = extract_string_field(list_item, "leavesValue");
+    order->leaves_value = strdup(leaves_value);
+    char *cum_exec_qty = extract_string_field(list_item, "cumExecQty");
+    order->cum_exec_qty = strdup(cum_exec_qty);
+    char *cum_exec_value = extract_string_field(list_item, "cumExecValue");
+    order->cum_exec_value = strdup(cum_exec_value);
+    char *cum_exec_fee = extract_string_field(list_item, "cumExecFee");
+    order->cum_exec_fee = strdup(cum_exec_fee);
+    char *time_in_force = extract_string_field(list_item, "timeInForce");
+    order->time_in_force = strdup(time_in_force);
+    char *order_type = extract_string_field(list_item, "orderType");
+    order->order_type = strdup(order_type);
+    char *stop_order_type = extract_string_field(list_item, "stopOrderType");
+    order->stop_order_type = strdup(stop_order_type);
+    char *order_lv = extract_string_field(list_item, "orderLv");
+    order->order_lv = strdup(order_lv);
+    char *trigger_price = extract_string_field(list_item, "triggerPrice");
+    order->trigger_price = strdup(trigger_price);
+    char *take_profit = extract_string_field(list_item, "takeProfit");
+    order->take_profit = strdup(take_profit);
+    char *stop_loss = extract_string_field(list_item, "stopLoss");
+    order->stop_loss = strdup(stop_loss);
+    char *tpsl_mode = extract_string_field(list_item, "tpslMode");
+    order->tpsl_mode = strdup(tpsl_mode);
+    char *tp_limit_price = extract_string_field(list_item, "tpLimitPrice");
+    order->tp_limit_price = strdup(tp_limit_price);
+    char *sl_limit_price = extract_string_field(list_item, "slLimitPrice");
+    order->sl_limit_price = strdup(sl_limit_price);
+    char *tp_trigger_by = extract_string_field(list_item, "tpTriggerBy");
+    order->tp_trigger_by = strdup(tp_trigger_by);
+    char *sl_trigger_by = extract_string_field(list_item, "slTriggerBy");
+    order->sl_trigger_by = strdup(sl_trigger_by);
+    int trigger_direction = extract_int_field(list_item, "triggerDirection");
+    order->trigger_direction = trigger_direction;
+    char *trigger_by = extract_string_field(list_item, "triggerBy");
+    order->trigger_by = strdup(trigger_by);
+    char *last_price_on_created = extract_string_field(list_item, "lastPriceOnCreated");
+    order->last_price_on_created = strdup(last_price_on_created);
+    bool reduce_only = extract_bool_field(list_item, "reduceOnly");
+    order->reduce_only = reduce_only;
+    bool close_on_trigger = extract_bool_field(list_item, "closeOnTrigger");
+    order->close_on_trigger = close_on_trigger;
+    char *place_type = extract_string_field(list_item, "placeType");
+    order->place_type = strdup(place_type);
+    char *smp_type = extract_string_field(list_item, "smpType");
+    order->smp_type = strdup(smp_type);
+    int smp_group = extract_int_field(list_item, "smpGroup");
+    order->smp_group = smp_group;
+    char *smp_order_id = extract_string_field(list_item, "smpOrderId");
+    order->smp_order_id = strdup(smp_order_id);
+    char *created_time = extract_string_field(list_item, "createdTime");
+    order->created_time = strdup(created_time);
+    char *updated_time = extract_string_field(list_item, "updatedTime");
+    order->updated_time = strdup(updated_time);
 
     return order;
 }
@@ -806,6 +979,8 @@ void free_open_order(OpenOrder *open_order)
     free(open_order->smp_order_id);
     free(open_order->created_time);
     free(open_order->updated_time);
+    free(open_order);
+    open_order = NULL;
 }
 
 void free_query_element(_queryElement *elem)

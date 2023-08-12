@@ -23,11 +23,12 @@ const char *AMEND_ORDER_PATH = "/order/amend";
 const char *CANCEL_ORDER_PATH = "/order/cancel";
 const char *CANCEL_ALL_ORDER_PATH = "/order/cancel-all";
 const char *OPEN_ORDER_REALTIME_PATH = "/order/realtime";
+const char *ORDER_HISTORY_PATH = "/order/history";
 
 // USER AGENT
 const char *USER_AGENT = "bybit-c";
 
-const int DEFAULT_RECV_WINDOW = 6000;
+const int DEFAULT_RECV_WINDOW = 7000;
 
 // New creates a new Client instance
 // which will contain information about API KEY and API SECRET
@@ -67,14 +68,15 @@ CURL *http_client()
 struct curl_slist *auth_headers(Client *clt, char *params)
 {
     // generating signature
-    int64_t ts = timestamp();
+    // int64_t ts = timestamp();
+    unsigned long long ts = (int64_t)utc_timestamp();
     char *hex_signature = gen_signature(clt->api_key, clt->api_secret, ts, params);
 
     // headers
     char api_key_header[36];
     sprintf(api_key_header, "X-BAPI-API-KEY: %s", clt->api_key);
     char ts_header[48];
-    sprintf(ts_header, "X-BAPI-TIMESTAMP: %ld", ts);
+    sprintf(ts_header, "X-BAPI-TIMESTAMP: %lld", ts);
     char sign_header[13 + strlen(hex_signature) + 1];
     sprintf(sign_header, "X-BAPI-SIGN: %s", hex_signature);
     char recv_window[32];
@@ -322,6 +324,26 @@ APIResponse *get_open_orders(Client *clt, OpenOrdersQuery *query)
 
     return resp;
 }
+
+APIResponse *get_order_history(Client *clt, OrdersHistoryQuery *query)
+{
+    char url[128];
+    sprintf(url, "%s%s", DOMAIN_TESTNET, ORDER_HISTORY_PATH);
+
+    // setting memory to store response
+    ResponseJSON mem = {.chunk = malloc(0), .size = 0};
+
+    CURLcode ret = perform_get(clt, url, query->_queries, &mem);
+    if (ret != CURLE_OK)
+        return NULL;
+
+    APIResponse *resp = parse_api_response(mem.chunk, parse_order_history_response_cb);
+
+    free(mem.chunk);
+
+    return resp;
+}
+
 
 // post_order place an order in the exchange
 APIResponse *post_order(Client *clt, OrderRequest *order_request)

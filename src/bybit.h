@@ -70,6 +70,7 @@ APIResponse *post_order(Client *clt, OrderRequest *order_request);
 APIResponse *post_amend_order(Client *clt, AmendOrderRequest *amend_order_request);
 APIResponse *post_cancel_order(Client *clt, CancelOrderRequest *cancel_order_request);
 APIResponse *post_cancel_all_orders(Client *clt, CancelAllOrders *cancel_all_orders_request);
+APIResponse *get_order_history(Client *clt, OrdersHistoryQuery *query);
 
 // UTILS
 char *gen_signature(const char *api_key, const char *api_secret, int64_t ts, char *params);

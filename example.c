@@ -5,6 +5,7 @@
 #include "src/request.h"
 #include "src/response.h"
 
+void retrieve_order_history();
 void place_cancel_all_orders();
 void place_cancel_order();
 void amend_order();
@@ -33,26 +34,107 @@ int main(int argc, char *argv[])
 	// retrieve_price_kline();
 	// retrieve_order_book();
 	// retrieve_open_orders();
-	place_cancel_all_orders();
+	// place_cancel_all_orders();
+	retrieve_order_history();
 	return 0;
+}
+
+void retrieve_order_history()
+{
+	Client *clt = new("<API_KEY>", "<API_SECRET>");
+	if (!clt)
+		return;
+
+	// allocate memory and initialize order request
+	OrdersHistoryQuery *order_history_query = build_orders_history_query("spot", "", "", "", "", "", "", "", "", "", "");
+	if (!order_history_query)
+		return;
+
+	APIResponse *api_resp = get_order_history(clt, order_history_query);
+	if (!api_resp)
+		goto end;
+
+	if (api_resp->ret_code != 0)
+	{
+		printf("response code: %d with message: %s\n", api_resp->ret_code, api_resp->ret_msg);
+		goto end;
+	}
+
+	if (!api_resp->result)
+	{
+		printf("RESULT IS NULL\n");
+		goto end;
+	}
+
+	OrderHistoryResponse *resp = (OrderHistoryResponse *)api_resp->result;
+	if (!resp)
+		goto end;
+
+	struct Node *cur = resp->list;
+	if (cur == NULL)
+		goto end;
+
+	int i = 0;
+	while (cur != NULL)
+	{
+		OpenOrder *order = (OpenOrder *)cur->val;
+		if (!order)
+		{
+			printf("breaking order is null\n");
+			break;
+		}
+		printf("-------------------> %d\n", i);
+		print_open_order(order);
+		cur = cur->next;
+		i++;
+	}
+
+	Node *tmp = NULL;
+	cur = resp->list;
+	while (cur != NULL)
+	{
+		if (!cur->val)
+		{
+			printf("breaking value is null\n");
+			break;
+		}
+		free_open_order(cur->val);
+		tmp = cur;
+		cur = cur->next;
+		free(tmp);
+	}
+
+	free(resp->category);
+
+end:
+	if (api_resp)
+		free_api_response(api_resp);
+	if (clt)
+		free(clt);
+	if (order_history_query)
+	{
+		free_list(&order_history_query->_queries, free_query_element_cb);
+		free(order_history_query);
+	}
+
+	return;
 }
 
 void place_cancel_all_orders()
 {
-	// Client *clt = new("<API_KEY>", "<API_SECRET>");
-	Client *clt = new("wLRb7YfUhzBYjcs8gY", "kKve5Z13n8t16tV7dooSKfs9robjXX2H6eQD");
+	Client *clt = new ("<API_KEY>", "<API_SECRET>");
 	if (!clt)
-		return ;
+		return;
 
 	// allocate memory and initialize order request
 	CancelAllOrders *cancel_all_orders_request = init_cancel_all_orders_request();
 	if (!cancel_all_orders_request)
-		return ;
+		return;
 
 	cancel_all_orders_request->category = "spot";
 	cancel_all_orders_request->symbol = "BTCUSDT";
 	cancel_all_orders_request->base_coin = "BTC";
-	
+
 	APIResponse *api_resp = post_cancel_all_orders(clt, cancel_all_orders_request);
 	if (!api_resp)
 		goto end;
@@ -63,7 +145,8 @@ void place_cancel_all_orders()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
@@ -98,23 +181,26 @@ void place_cancel_all_orders()
 	}
 
 end:
-	if (cancel_all_orders_request) free(cancel_all_orders_request);
-	if (api_resp) free_api_response(api_resp);
-	if (clt) free(clt);
+	if (cancel_all_orders_request)
+		free(cancel_all_orders_request);
+	if (api_resp)
+		free_api_response(api_resp);
+	if (clt)
+		free(clt);
 
-	return ;
+	return;
 }
 
 void retrieve_open_orders()
 {
-	Client *clt = new("<API_KEY>", "<API_SECRET>");
+	Client *clt = new ("<API_KEY>", "<API_SECRET>");
 	if (!clt)
-		return ;
+		return;
 
 	// allocate memory and initialize order request
 	OpenOrdersQuery *open_orders_query = build_open_orders_query("spot", "", "", "", "", 0, "", 10, "");
 	if (!open_orders_query)
-		return ;
+		return;
 
 	APIResponse *api_resp = get_open_orders(clt, open_orders_query);
 	if (!api_resp)
@@ -126,7 +212,8 @@ void retrieve_open_orders()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
@@ -161,36 +248,37 @@ void retrieve_open_orders()
 
 	free(resp->category);
 	free(resp->next_page_cursor);
-	
 
 end:
-	if (api_resp) free_api_response(api_resp);
-	if (clt) free(clt);
+	if (api_resp)
+		free_api_response(api_resp);
+	if (clt)
+		free(clt);
 	if (open_orders_query)
 	{
 		free_list(&open_orders_query->_queries, free_query_element_cb);
 		free(open_orders_query);
 	}
 
-	return ;
+	return;
 }
 
 void place_cancel_order()
 {
-	Client *clt = new("<API_KEY>", "<API_SECRET>");
+	Client *clt = new ("<API_KEY>", "<API_SECRET>");
 	if (!clt)
-		return ;
+		return;
 
 	// allocate memory and initialize order request
 	CancelOrderRequest *cancel_order_request = init_cancel_order_request();
 	if (!cancel_order_request)
-		return ;
+		return;
 
 	cancel_order_request->category = "spot";
 	cancel_order_request->symbol = "BTCUSDT";
-    cancel_order_request->order_id = "1482027329061466624";
-    cancel_order_request->order_link_id = 0;
-	
+	cancel_order_request->order_id = "1482027329061466624";
+	cancel_order_request->order_link_id = 0;
+
 	APIResponse *api_resp = post_cancel_order(clt, cancel_order_request);
 	if (!api_resp)
 		goto end;
@@ -201,7 +289,8 @@ void place_cancel_order()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
@@ -212,32 +301,37 @@ void place_cancel_order()
 
 	printf("ORDER ID: %s\n", resp->order_id);
 	printf("ORDER LINK ID: %s\n", resp->order_link_id);
-	
-	if (resp->order_id) free(resp->order_id);
-	if (resp->order_link_id) free(resp->order_link_id);
+
+	if (resp->order_id)
+		free(resp->order_id);
+	if (resp->order_link_id)
+		free(resp->order_link_id);
 
 end:
-	if (cancel_order_request) free(cancel_order_request);
-	if (api_resp) free_api_response(api_resp);
-	if (clt) free(clt);
+	if (cancel_order_request)
+		free(cancel_order_request);
+	if (api_resp)
+		free_api_response(api_resp);
+	if (clt)
+		free(clt);
 
-	return ;
+	return;
 }
 
 void amend_order()
 {
-	Client *clt = new("<API_KEY>", "<API_SECRET>");
+	Client *clt = new ("<API_KEY>", "<API_SECRET>");
 	if (!clt)
-		return ;
+		return;
 
 	// allocate memory and initialize order request
 	AmendOrderRequest *amend_order_request = init_amend_order_request();
 	if (!amend_order_request)
-		return ;
+		return;
 
 	amend_order_request->category = "linear";
 	amend_order_request->symbol = "BTCUSDT";
-	
+
 	APIResponse *api_resp = post_amend_order(clt, amend_order_request);
 	if (!api_resp)
 		goto end;
@@ -248,7 +342,8 @@ void amend_order()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
@@ -259,28 +354,33 @@ void amend_order()
 
 	printf("ORDER ID: %s\n", resp->order_id);
 	printf("ORDER LINK ID: %s\n", resp->order_link_id);
-	
-	if (resp->order_id) free(resp->order_id);
-	if (resp->order_link_id) free(resp->order_link_id);
+
+	if (resp->order_id)
+		free(resp->order_id);
+	if (resp->order_link_id)
+		free(resp->order_link_id);
 
 end:
-	if (amend_order_request) free(amend_order_request);
-	if (api_resp) free_api_response(api_resp);
-	if (clt) free(clt);
+	if (amend_order_request)
+		free(amend_order_request);
+	if (api_resp)
+		free_api_response(api_resp);
+	if (clt)
+		free(clt);
 
-	return ;
+	return;
 }
 
 void place_order()
 {
-	Client *clt = new("<API_KEY>", "<API_SECRET>");
+	Client *clt = new ("<API_KEY>", "<API_SECRET>");
 	if (!clt)
-		return ;
+		return;
 
 	// allocate memory and initialize order request
 	OrderRequest *order_request = init_order_request();
 	if (!order_request)
-		return ;
+		return;
 
 	order_request->category = "spot";
 	order_request->symbol = "BTCUSDT";
@@ -288,7 +388,7 @@ void place_order()
 	order_request->order_type = "Limit";
 	order_request->qty = "0.2";
 	order_request->price = "27000";
-	
+
 	APIResponse *api_resp = post_order(clt, order_request);
 	if (!api_resp)
 		goto end;
@@ -299,7 +399,8 @@ void place_order()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
@@ -310,29 +411,36 @@ void place_order()
 
 	printf("ORDER ID: %s\n", resp->order_id);
 	printf("ORDER LINK ID: %s\n", resp->order_link_id);
-	
-	if (resp->order_id) free(resp->order_id);
-	if (resp->order_link_id) free(resp->order_link_id);
+
+	if (resp->order_id)
+		free(resp->order_id);
+	if (resp->order_link_id)
+		free(resp->order_link_id);
 
 end:
-	if (order_request) free(order_request);
-	if (api_resp) free_api_response(api_resp);
-	if (clt) free(clt);
+	if (order_request)
+		free(order_request);
+	if (api_resp)
+		free_api_response(api_resp);
+	if (clt)
+		free(clt);
 
-	return ;
+	return;
 }
 
 // retrieve ticker example
 void retrieve_ticker()
 {
 	TickersQueryParams *query = build_ticker_query("spot", "TONUSDT", "TON", "");
-	if (!query) {
+	if (!query)
+	{
 		printf("QUERY IS NULL\n");
 		return;
 	}
 
 	APIResponse *api_resp = get_ticker(query);
-	if (!api_resp) {
+	if (!api_resp)
+	{
 		printf("RESP IS NULL\n");
 		goto end;
 	}
@@ -343,14 +451,16 @@ void retrieve_ticker()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
 
 	TickerResponse *resp = (TickerResponse *)api_resp->result;
 	struct Node *cur = resp->list;
-	if (cur == NULL) {
+	if (cur == NULL)
+	{
 		printf("CUR IS NULL\n");
 		goto end;
 	}
@@ -373,7 +483,8 @@ void retrieve_ticker()
 		free(tmp);
 	}
 
-	if (resp->category) free(resp->category);
+	if (resp->category)
+		free(resp->category);
 
 end:
 	free_api_response(api_resp);
@@ -401,7 +512,8 @@ void retrieve_price_kline()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
@@ -433,8 +545,10 @@ void retrieve_price_kline()
 		free(tmp);
 	}
 
-	if (resp->category) free(resp->category);
-	if (resp->symbol) free(resp->symbol);
+	if (resp->category)
+		free(resp->category);
+	if (resp->symbol)
+		free(resp->symbol);
 end:
 	free_api_response(api_resp);
 	if (query)
@@ -488,9 +602,11 @@ void retrieve_kline()
 	}
 
 	// free response
-	if (resp->category) free(resp->category);
-	if (resp->symbol) free(resp->symbol);
-	
+	if (resp->category)
+		free(resp->category);
+	if (resp->symbol)
+		free(resp->symbol);
+
 end:
 	free_api_response(api_resp);
 	if (query)
@@ -508,7 +624,8 @@ void retrieve_order_book()
 		return;
 
 	APIResponse *api_resp = get_order_book(query);
-	if (!api_resp) {
+	if (!api_resp)
+	{
 		printf("RESP IS NULL\n");
 		goto end;
 	}
@@ -519,7 +636,8 @@ void retrieve_order_book()
 		goto end;
 	}
 
-	if (!api_resp->result) {
+	if (!api_resp->result)
+	{
 		printf("RESULT IS NULL\n");
 		goto end;
 	}
@@ -573,9 +691,12 @@ void retrieve_order_book()
 		free(tmp);
 	}
 
-	if (resp->symbol) free(resp->symbol);
-	if (resp->ts) free(resp->ts);
-	if (resp->update_id) free(resp->update_id);
+	if (resp->symbol)
+		free(resp->symbol);
+	if (resp->ts)
+		free(resp->ts);
+	if (resp->update_id)
+		free(resp->update_id);
 
 end:
 	free_api_response(api_resp);
@@ -602,13 +723,14 @@ void retrieve_time_server()
 	TimeServerResponse *resp = (TimeServerResponse *)api_resp->result;
 	if (!resp)
 		goto end;
-	
 
 	printf("time_second: %s\n", resp->time_second);
 	printf("time_nano: %s\n", resp->time_nano);
 
-	if (resp->time_second) free(resp->time_second);
-	if (resp->time_nano) free(resp->time_nano);
+	if (resp->time_second)
+		free(resp->time_second);
+	if (resp->time_nano)
+		free(resp->time_nano);
 end:
 	free_api_response(api_resp);
 }
@@ -671,6 +793,11 @@ void print_order_book(OrderB *order)
 
 void print_open_order(OpenOrder *order)
 {
+	if (!order)
+	{
+		printf("ORDER IS NULL");
+		return;
+	}
 	printf("order_id: %s\n", order->order_id);
 	printf("block_trade_id: %s\n", order->block_trade_id);
 	printf("symbol: %s\n", order->symbol);

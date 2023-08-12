@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <time.h>
 #include <curl/curl.h>
 #include "common.h"
@@ -76,6 +77,18 @@ char *extract_string_field(const cJSON *json, char *field_name)
     return "";
 }
 
+int extract_int_field(const cJSON *json, char *field_name)
+{
+    cJSON *item = cJSON_GetObjectItemCaseSensitive(json, field_name);
+    return item->valueint;
+}
+
+bool extract_bool_field(const cJSON *json, char *field_name)
+{
+    cJSON *item = cJSON_GetObjectItemCaseSensitive(json, field_name);
+    return cJSON_IsTrue(item) ? TRUE : FALSE;
+}
+
 void add_string_field(cJSON *const json, const char *field_name, char *field)
 {
     if (field)
@@ -105,6 +118,16 @@ const char *bool_to_string(bool val)
 int64_t timestamp()
 {
     return time(NULL) * 1000;
+}
+
+unsigned long long utc_timestamp()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    unsigned long long milliseconds = (unsigned long long)(tv.tv_sec) * 1000 + (unsigned long long)(tv.tv_usec) / 1000;
+
+    return milliseconds;
 }
 
 void clean_string(char *str)
